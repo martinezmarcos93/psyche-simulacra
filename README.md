@@ -177,7 +177,7 @@ Sesión nocturna de 8h → ~480 días simulados (> 1 año de vida del grupo)
 ## Estructura del proyecto
 
 ```
-PSYCHE SIMULACRA/
+psyche-simulacra/
 │
 ├── ui/
 │   ├── __init__.py
