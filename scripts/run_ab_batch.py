@@ -100,6 +100,11 @@ def main() -> None:
                 env["AB_DAYS"]      = str(args.days)
                 env["AB_SEED_FILE"] = args.seed_file
                 env.update(env_extra)
+                # Sin esto, dos corridas con la misma semilla divergen pasado el día ~80
+                # (hash() de str cambia entre procesos), y el pareo por semilla del A/B
+                # deja de ser exacto. Verificado el 2026-10-04: con valor fijo, 300 días
+                # son idénticos entre procesos.
+                env.setdefault("PYTHONHASHSEED", "0")
 
                 t0 = time.time()
                 print(f"{tag} ...", flush=True)

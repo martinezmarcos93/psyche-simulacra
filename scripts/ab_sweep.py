@@ -55,6 +55,9 @@ def _run_one(seed: int, condition: str, days: int, seed_file: str, weight: float
     env["AB_DAYS"] = str(days)
     env["AB_SEED_FILE"] = seed_file
     env["INTERPRETIVE_WEIGHT"] = str(weight)
+    # Mismo motivo que en run_ab_batch.py: sin hash fijo, la misma semilla no
+    # reproduce la misma corrida entre procesos.
+    env.setdefault("PYTHONHASHSEED", "0")
 
     proc = subprocess.run(
         [sys.executable, _SCRIPT],
