@@ -62,8 +62,15 @@ class ArchetypeVector:
     gobernante:     float = 0.40
     rebelde:        float = 0.30
 
+    # Dominante estable fijado por ArchetypeRecalibrator (histéresis). None → el
+    # dominante es el máximo instantáneo, como siempre. No se serializa acá: lo
+    # restaura el recalibrador del agente.
+    _dominante_estable: str | None = field(default=None, repr=False, compare=False)
+
     def dominant(self) -> str:
-        """Arquetipo con mayor peso."""
+        """Arquetipo dominante: el estable si hay recalibración, si no el de mayor peso."""
+        if self._dominante_estable is not None:
+            return self._dominante_estable
         vals = self._as_dict()
         return max(vals, key=vals.get)
 

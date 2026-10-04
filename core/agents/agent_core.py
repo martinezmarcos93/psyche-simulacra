@@ -405,6 +405,11 @@ class AgentCore:
                 local_field = self.tribe_manager.get_local_field(agent.id) or self.collective_field
                 agent.consolidate_mind(local_field, tp.dia_simulado)
 
+        # 9c. Recalibración arquetípica por vivencia. No-op si el flag
+        #     ARCHETYPE_RECALIBRATION_ENABLED está OFF (recalibrator es None).
+        for agent in self.agents.values():
+            agent.recalibrate_archetypes(tp.dia_simulado)
+
         # 10. Contagio emocional: agentes muy ansiosos propagan miedo a sus vínculos (Hito 4)
         self._process_emotional_contagion(tp.dia_simulado)
 

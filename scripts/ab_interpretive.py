@@ -133,6 +133,14 @@ def main() -> None:
         "valence_std_inter_q4":        round(_mean([m.valence_std_inter for m in q4]), 6),
         "arousal_std_intra_q4":        round(_mean([m.arousal_std_intra for m in q4]), 6),
         "arousal_std_inter_q4":        round(_mean([m.arousal_std_inter for m in q4]), 6),
+        # ── Control del confound por número de tribus (ver
+        # docs/experiments/2026-09-21-fase1-n15-repeticion.md) ────────────────
+        "n_isolates_q4":          round(_mean([m.n_isolates for m in q4]), 3),
+        "n_tribes_multi_q4":      round(_mean([m.n_tribes_multi for m in q4]), 3),
+        "behavioral_kl_multi_q4": round(_mean([m.behavioral_kl_multi_mean for m in q4]), 6),
+        # ── Recalibración arquetípica ────────────────────────────────────────
+        "recalibration":          os.environ.get("ARCHETYPE_RECALIBRATION_ENABLED", "0").strip() not in ("0", "false", "no"),
+        "reorganizations_total":  series[-1].reorganizations_total if series else 0,
     }
     print("AB_RESULT " + json.dumps(result))
 

@@ -102,7 +102,8 @@ SimulationClock (tick = 1 hora simulada)
 ### Ecuación Personal (percepción y cognición individual)
 - **InterpretiveFilter** (`INTERPRETIVE_FILTER_ENABLED=1`) — cada agente filtra el estímulo físico a través de 4 operadores content-free (atención, causa, evaluación afectiva, comparación social) antes de que llegue al colapso conductual; produce un `PerceivedEvent` con `valence`/`arousal` subjetivos y, por préstamo de vocabulario ya cristalizado (nunca inventado), `narrative_frame`/`attributed_cause`/`moral_judgment`. Desactivado por defecto — el experimento A/B no encontró efecto medible de divergencia cultural a la escala probada (ver `docs/experiments/`)
 - **MentalVault** (`MENTAL_VAULT_ENABLED=1`, requiere el filtro ON) — mini cerebro por agente: grafo de nodos con enlazado probabilístico y resonancia emergente, expone `worldview_coherence()`. Desactivado por defecto, misma razón que arriba
-- Detalle completo de ambos: `docs/AGENT_BRAIN.md`, `docs/MENTAL_VAULT.md`, `docs/EMERGENCE.md`
+- **ArchetypeRecalibrator** (`ARCHETYPE_RECALIBRATION_ENABLED=1`, requiere el filtro ON) — las vivencias de cada agente recalibran su vector arquetípico: la resonancia de cada `PerceivedEvent` se acumula aparte del vector, decae si no se repite y solo se consolida si se sostiene; el dominante es estable (histéresis) y su cambio es un evento de "reorganización". Desactivado por defecto. Diseño: `docs/proposals/2026-10-04-jpaf-ideas-aplicables.md`
+- Detalle completo de los dos primeros: `docs/AGENT_BRAIN.md`, `docs/MENTAL_VAULT.md`, `docs/EMERGENCE.md`
 
 ### Tribus y divergencia cultural
 - **TribeManager** — clustering via `greedy_modularity_communities` (NetworkX) cada 30 días
@@ -436,6 +437,7 @@ DAYS_UNTIL_CLUSTERING=30                # días hasta primer clustering tribal
 # Ecuación Personal (desactivada por defecto — ver docs/experiments/)
 INTERPRETIVE_FILTER_ENABLED=0            # 1 activa el InterpretiveFilter
 MENTAL_VAULT_ENABLED=0                   # 1 activa el MentalVault (requiere el filtro ON)
+ARCHETYPE_RECALIBRATION_ENABLED=0        # 1 activa la recalibración arquetípica (requiere el filtro ON)
 
 # Mitología (calibración — ver docs/experiments/)
 MYTH_CONTEXT_THRESHOLD=0.25              # umbral de contexto para nacer un proto-mito

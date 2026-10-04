@@ -6,6 +6,11 @@ from typing import TYPE_CHECKING
 
 _N_BINS = 5  # bins para discretizar arquetipos en el cálculo de MIG
 
+# Tamaño mínimo para que una tribu entre en behavioral_kl_multi_mean. Con menos
+# miembros la distribución de acción es casi one-hot y el KL contra cualquier otra
+# tribu se dispara por el epsilon — ver docs/experiments/2026-09-21-fase1-n15-repeticion.md.
+_MIN_TRIBE_SIZE_KL = 3
+
 # Las 4 acciones del colapso conductual, en orden canónico (espejo de BEHAVIORAL_STATES).
 # Se define localmente para no acoplar el módulo de métricas a la capa cuántica.
 _ACTIONS: tuple[str, ...] = ("cooperacion", "competencia", "aislamiento", "manipulacion")
@@ -68,6 +73,14 @@ class DayMetrics:
     valence_std_inter: float = 0.0    # std de la valence media ENTRE tribus
     arousal_std_intra: float = 0.0    # media de la std de arousal DENTRO de cada tribu
     arousal_std_inter: float = 0.0    # std de la arousal media ENTRE tribus
+    # ── Control del confound por número de tribus (experimento n=15, 2026-10-04).
+    # TribeManager cuenta a cada agente sin vínculos fuertes como una tribu de un
+    # miembro, así que n_tribes mezcla tribus reales y aislados. ──────────────
+    n_isolates: int = 0               # tribus de un solo miembro vivo
+    n_tribes_multi: int = 0           # tribus con >= 2 miembros vivos
+    behavioral_kl_multi_mean: float = 0.0  # behavioral_kl_mean solo entre tribus de >= _MIN_TRIBE_SIZE_KL
+    # ── Recalibración arquetípica (ARCHETYPE_RECALIBRATION_ENABLED) ───────────
+    reorganizations_total: int = 0    # reorganizaciones de dominante acumuladas entre los vivos
 
 
 class EmergenceMetrics:
@@ -107,6 +120,11 @@ class EmergenceMetrics:
         behavioral_entropy_intra_mean = self._behavioral_entropy_intra(alive, tribes)
         (valence_std_intra, valence_std_inter,
          arousal_std_intra, arousal_std_inter) = self._affective_dispersion_intra_inter(alive, tribes)
+        n_isolates, n_tribes_multi = self._tribe_size_counts(alive, tribes)
+        behavioral_kl_multi_mean = self._behavioral_divergence(
+            alive, tribes, min_members=_MIN_TRIBE_SIZE_KL
+        )
+        reorganizations_total = self._reorganizations_total(alive)
 
         return DayMetrics(
             dia=dia,
@@ -130,6 +148,10 @@ class EmergenceMetrics:
             valence_std_inter=valence_std_inter,
             arousal_std_intra=arousal_std_intra,
             arousal_std_inter=arousal_std_inter,
+            n_isolates=n_isolates,
+            n_tribes_multi=n_tribes_multi,
+            behavioral_kl_multi_mean=behavioral_kl_multi_mean,
+            reorganizations_total=reorganizations_total,
         )
 
     # ── Distribuciones ────────────────────────────────────────────────────────
@@ -177,7 +199,9 @@ class EmergenceMetrics:
 
     # ── Instrumento de la Ecuación Personal (camino c) ────────────────────────
 
-    def _behavioral_divergence(self, alive: dict, tribes: dict[str, list[str]]) -> float:
+    def _behavioral_divergence(
+        self, alive: dict, tribes: dict[str, list[str]], min_members: int = 1
+    ) -> float:
         """
         KL pairwise medio entre las distribuciones de acción conductual de cada tribu.
 
@@ -185,6 +209,9 @@ class EmergenceMetrics:
         no los arquetipos. Esta lente mide directamente esa capa: si dos tribus actúan
         de forma cada vez más distinta, la divergencia conductual sube — aunque KL/MIG
         arquetípicos no se muevan.
+
+        `min_members` descarta tribus con menos miembros con acción registrada. Con el
+        default (1) entran también los aislados, cuya distribución es one-hot.
         """
         dists: dict[str, list[float]] = {}
         for tribe_id, member_ids in tribes.items():
@@ -198,7 +225,7 @@ class EmergenceMetrics:
                 if accion in _ACTIONS:
                     counts[_ACTIONS.index(accion)] += 1.0
                     n += 1
-            if n == 0:
+            if n == 0 or n < min_members:
                 continue
             total = sum(counts) + _EPSILON
             dists[tribe_id] = [c / total for c in counts]
@@ -351,6 +378,27 @@ class EmergenceMetrics:
         arousal_inter = _std(tribe_arousal_means) if len(tribe_arousal_means) >= 2 else 0.0
 
         return valence_intra, valence_inter, arousal_intra, arousal_inter
+
+    def _tribe_size_counts(self, alive: dict, tribes: dict[str, list[str]]) -> tuple[int, int]:
+        """(aislados, tribus de >= 2 miembros), contando solo miembros vivos."""
+        n_isolates = 0
+        n_multi = 0
+        for member_ids in tribes.values():
+            n = sum(1 for aid in member_ids if aid in alive)
+            if n == 1:
+                n_isolates += 1
+            elif n >= 2:
+                n_multi += 1
+        return n_isolates, n_multi
+
+    def _reorganizations_total(self, alive: dict) -> int:
+        """Reorganizaciones de dominante acumuladas entre los vivos (0 con el flag OFF)."""
+        total = 0
+        for a in alive.values():
+            n = getattr(getattr(a, "recalibrator", None), "reorganizaciones", 0)
+            if isinstance(n, int):
+                total += n
+        return total
 
     def _mean_worldview_coherence(self, alive: dict) -> float:
         """Coherencia media del MentalVault entre agentes que lo tienen (vault ON)."""

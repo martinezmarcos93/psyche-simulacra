@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from core.interface import ActionType, WorldAction, WorldSnapshot
 from core.interface.perceived_event import PerceivedEvent, Stimulus
 from .psyche.interpretive_filter import InterpretiveFilter
+from .psyche.recalibration import ArchetypeRecalibrator
 from .mental_vault import MentalVault
 from core.time import TimePoint
 from core.world.substances import SUBSTANCES, SUBSTANCE_NAMES
@@ -49,6 +50,14 @@ _INTERPRETIVE_FILTER_ENABLED = (
 # OFF por defecto: corridas existentes byte-idénticas.
 _MENTAL_VAULT_ENABLED = (
     os.environ.get("MENTAL_VAULT_ENABLED", "0").strip() not in ("0", "false", "no")
+    and _INTERPRETIVE_FILTER_ENABLED
+)
+
+# Recalibración arquetípica por vivencia. Se alimenta de los PerceivedEvents, así
+# que EXIGE el filtro ON, igual que el vault. OFF por defecto: corridas existentes
+# byte-idénticas.
+_ARCHETYPE_RECALIBRATION_ENABLED = (
+    os.environ.get("ARCHETYPE_RECALIBRATION_ENABLED", "0").strip() not in ("0", "false", "no")
     and _INTERPRETIVE_FILTER_ENABLED
 )
 
@@ -169,6 +178,12 @@ class Agent:
         # Ruido conductual emergente de la incoherencia interna del vault (se aplica al
         # colapso). 0.0 → sin efecto.
         self._mind_ruido: float = 0.0
+
+        # Recalibración arquetípica: las vivencias (PerceivedEvents) se acumulan aparte
+        # del vector y solo se consolidan si se sostienen. Requiere el filtro.
+        self.recalibrator: ArchetypeRecalibrator | None = (
+            ArchetypeRecalibrator() if _ARCHETYPE_RECALIBRATION_ENABLED else None
+        )
 
     # ── Ciclo de vida ────────────────────────────────────────────────────────
 
@@ -396,6 +411,27 @@ class Agent:
                 setattr(self.archetypes, attr, max(0.0, min(1.0, current + delta)))
         self._mind_ruido = feedback["ruido"]
 
+    def recalibrate_archetypes(self, dia: int) -> None:
+        """
+        Ciclo diario de la recalibración arquetípica. Llamado una vez por día por
+        AgentCore. No-op si el flag ARCHETYPE_RECALIBRATION_ENABLED está OFF.
+        """
+        if self.recalibrator is None or not self.is_alive:
+            return
+        reorg = self.recalibrator.on_day(self.archetypes)
+        if reorg is not None:
+            anterior, nuevo = reorg
+            self.episodic_log.append(
+                f"Día {dia}: su arquetipo dominante se reorganizó ({anterior} → {nuevo})."
+            )
+
+    def _registrar_vivencia(self, pe: PerceivedEvent) -> None:
+        """Entrega un PerceivedEvent a los sistemas que acumulan vivencia."""
+        if self.mental_vault is not None:
+            self.mental_vault.accumulate(pe)
+        if self.recalibrator is not None:
+            self.recalibrator.registrar(pe.archetype_activation, pe.valence)
+
     # ── Decision ─────────────────────────────────────────────────────────────
 
     def decide_action(
@@ -421,8 +457,7 @@ class Agent:
             self.last_perceived_event = self._interpretive_filter.interpret(
                 stim, self, collective_field, mythology_engine
             )
-            if self.mental_vault is not None:
-                self.mental_vault.accumulate(self.last_perceived_event)
+            self._registrar_vivencia(self.last_perceived_event)
 
         # Disociación por sombra — override de toda la lógica normal (Hito B)
         if self.dissociation_state is not None:
@@ -634,8 +669,7 @@ class Agent:
             return None
         pe = self._interpretive_filter.interpret(stim, self, collective_field, mythology_engine)
         self.last_perceived_event = pe
-        if self.mental_vault is not None:
-            self.mental_vault.accumulate(pe)
+        self._registrar_vivencia(pe)
         return pe
 
     def _build_stimulus(self, snapshot: WorldSnapshot, hay_aliados: bool) -> Stimulus:
@@ -1021,6 +1055,7 @@ class Agent:
             "resentments":          dict(self.resentments),
             "mental_vault":     self.mental_vault.to_dict() if self.mental_vault else None,
             "mind_ruido":       self._mind_ruido,
+            "recalibrator":     self.recalibrator.to_dict() if self.recalibrator else None,
             "schedule":         self.schedule.to_dict(),
             "archetypes":       self.archetypes.to_dict(),
             "complexes":        self.complexes.to_dict(),
@@ -1105,5 +1140,11 @@ class Agent:
         if a.mental_vault is not None and raw_mv:
             a.mental_vault = MentalVault.from_dict(raw_mv)
         a._mind_ruido = float(data.get("mind_ruido", 0.0))
+
+        # Recalibración arquetípica: misma regla que el vault (flag activo + dato presente).
+        raw_rc = data.get("recalibrator")
+        if a.recalibrator is not None and raw_rc:
+            a.recalibrator = ArchetypeRecalibrator.from_dict(raw_rc)
+            a.archetypes._dominante_estable = a.recalibrator.dominante
 
         return a
