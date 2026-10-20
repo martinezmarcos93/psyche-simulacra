@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from core.social.tribe_manager import TribeManager
     from core.social.collective_field import CollectiveField
     from core.world.culture_engine import CultureEngine
+    from core.social.nomos import Nomos
 
 _EPSILON = 1e-9
 
@@ -68,6 +69,13 @@ class DayMetrics:
     valence_std_inter: float = 0.0    # std de la valence media ENTRE tribus
     arousal_std_intra: float = 0.0    # media de la std de arousal DENTRO de cada tribu
     arousal_std_inter: float = 0.0    # std de la arousal media ENTRE tribus
+    # ── Experimento EDEN ──────────────────────────────────────────────────────
+    # True mientras el orden providencial de Nomos sigue activo (o si Nomos ni
+    # siquiera existe en esta corrida — EDEN_ENABLED=0, valor por defecto).
+    # False desde el día del switch en adelante. Permite que el análisis A/B
+    # ventanee automáticamente el antes/después sin buscar el día del evento
+    # a mano (ver docs/experiments/, AgentCore.eden_event tiene el detalle).
+    nomos_active: bool = True
 
 
 class EmergenceMetrics:
@@ -88,6 +96,7 @@ class EmergenceMetrics:
         tribe_manager:    "TribeManager",
         collective_field: "CollectiveField",
         culture_engine:   "CultureEngine | None" = None,
+        nomos:            "Nomos | None" = None,
     ) -> DayMetrics:
         alive  = {aid: a for aid, a in agents.items() if a.is_alive}
         tribes = tribe_manager.tribes
@@ -130,6 +139,7 @@ class EmergenceMetrics:
             valence_std_inter=valence_std_inter,
             arousal_std_intra=arousal_std_intra,
             arousal_std_inter=arousal_std_inter,
+            nomos_active=nomos.enabled if nomos is not None else True,
         )
 
     # ── Distribuciones ────────────────────────────────────────────────────────
