@@ -26,6 +26,7 @@ from .quantum.collapse import collapse_state
 
 if TYPE_CHECKING:
     from core.social.nomos import Nomos
+    from core.social.serpent import Serpiente
 
 _DIAS_HAMBRE_MUERTE   = 3
 _DIAS_SED_MUERTE      = 3
@@ -169,6 +170,12 @@ class Agent:
         # Ruido conductual emergente de la incoherencia interna del vault (se aplica al
         # colapso). 0.0 → sin efecto.
         self._mind_ruido: float = 0.0
+
+        # Experimento EDEN: tick en que corrió el colapso cuántico por última vez.
+        # AgentCore lo compara contra el tick actual para atribuir el acto de
+        # desafío al colapso de ESTE tick, no a un `ultimo_colapso` de un tick
+        # anterior donde la agenda no pasó por aquí.
+        self.last_collapse_tick: int | None = None
 
     # ── Ciclo de vida ────────────────────────────────────────────────────────
 
@@ -406,6 +413,7 @@ class Agent:
         hay_aliados: bool = False,
         mythology_engine: "MythologyEngine | None" = None,
         nomos: "Nomos | None" = None,
+        serpiente: "Serpiente | None" = None,
     ) -> WorldAction | None:
         """Devuelve una WorldAction o None. Integra psicología en la decisión."""
         if not self.is_alive:
@@ -450,11 +458,11 @@ class Agent:
 
         # Aislamiento crítico: el agente busca interacción aunque no sea su hora de socializar
         if self.needs.social_override_active():
-            return self._decide_via_collapse(tp, snapshot, collective_field, hay_aliados, mythology_engine, nomos)
+            return self._decide_via_collapse(tp, snapshot, collective_field, hay_aliados, mythology_engine, nomos, serpiente)
 
         # Colapso cuántico para decisiones no-críticas
         if actividad == "interactuar":
-            return self._decide_via_collapse(tp, snapshot, collective_field, hay_aliados, mythology_engine, nomos)
+            return self._decide_via_collapse(tp, snapshot, collective_field, hay_aliados, mythology_engine, nomos, serpiente)
 
         # Rutina normal de la agenda
         if actividad in ("dormir", "descansar"):
@@ -503,6 +511,7 @@ class Agent:
         hay_aliados: bool = False,
         mythology_engine: "MythologyEngine | None" = None,
         nomos: "Nomos | None" = None,
+        serpiente: "Serpiente | None" = None,
     ) -> WorldAction | None:
         """
         Usa el motor cuántico para decidir la acción en horas sociales.
@@ -554,6 +563,11 @@ class Agent:
         # agente no tiene vocación asignada — comportamiento byte-idéntico previo.
         nomos_influence = nomos.vocacion_bias(self.id) if nomos is not None else None
 
+        # Experimento EDEN: la tentación de la Serpiente, si cruzó su propio
+        # umbral interno, compite como otro canal más (ver core/social/serpent.py).
+        # None si la Serpiente está ausente o el agente no fue tentado todavía.
+        serpent_influence = serpiente.influence(self.id) if serpiente is not None else None
+
         accion = collapse_state(
             state            = self.behavioral_state,
             context          = context,
@@ -563,9 +577,11 @@ class Agent:
             field_influence  = field_influence,
             interpretive_influence = interpretive_influence,
             nomos_influence  = nomos_influence,
+            serpent_influence = serpent_influence,
             noise            = self._mind_ruido,
             rng              = self._rng,
         )
+        self.last_collapse_tick = tp.tick
 
         # Traducir colapso a WorldAction (Fase 7: socializar localmente vs explorar solo)
         if accion == "aislamiento":
