@@ -2,8 +2,15 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
-from core.agents.psyche.archetypes import ArchetypeVector
+if TYPE_CHECKING:
+    # Solo se usa como type hint — importarlo en tiempo de ejecución dispara
+    # la inicialización de core.agents (que importa de vuelta este módulo
+    # desde agent_core.py), un import circular si algo importa core.social.nomos
+    # antes de que core.agents se haya tocado. Ver core/social/serpent.py,
+    # mismo patrón.
+    from core.agents.psyche.archetypes import ArchetypeVector
 
 # Vocaciones impuestas por el orden providencial — catálogo fijo (Capa A),
 # mismo estatus arquitectónico que los 12 arquetipos o los 5 tipos de mito

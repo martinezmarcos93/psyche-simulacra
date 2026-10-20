@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
-from core.agents.psyche.archetypes import ArchetypeVector
+if TYPE_CHECKING:
+    # Solo se usa como type hint — ver mismo comentario en core/social/nomos.py.
+    from core.agents.psyche.archetypes import ArchetypeVector
 
 # Elegibilidad del "librepensador" — dos caminos arquetípicos distintos a la
 # autonomía (Capa A, documentado como axioma del experimento, no como
