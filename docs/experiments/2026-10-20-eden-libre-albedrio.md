@@ -1,0 +1,115 @@
+# Experimento EDEN — libre albedrío tras el retiro del orden providencial
+
+**Fecha:** 2026-10-20
+**Commit base:** `30ec495` (rama `experiment/eden-libre-albedrio`)
+**Roadmap:** sesión de especulación 2026-10-20 (ver `docs/handoffs/` si se escribió
+handoff de cierre) — no hay roadmap previo en `src/`, es un experimento nuevo.
+
+---
+
+## Premisa
+
+Lectura del mito cristiano de la prueba: Dios crea, ordena y sostiene a los
+humanos; el cuerpo y sus deseos ya están presentes desde el principio; la
+prueba es ver si, teniendo cuerpo, se sigue obedeciendo cuando la ley deja de
+imponerse. Trasladado a PSYCHE SIMULACRA: una fuerza providencial (`Nomos`)
+organiza, provee y pacifica una sociedad de agentes psicológicamente completos
+(ya tienen complejos, sombra, rasgos clínicos, necesidades biológicas — "el
+cuerpo" no hay que diseñarlo, ya existe). Un interruptor retira esa fuerza de
+forma abrupta y total. La pregunta no es narrativa, es medible: ¿la sociedad
+que queda se parece a la que había, o se reorganiza?
+
+## Hipótesis
+
+1. **Anomia, no libertad instantánea**: tras el switch, `CollectiveField.confusion`
+   y `emotional_pressure` suben antes de estabilizarse — la pérdida de orden
+   desorganiza antes de que (si acaso) un orden nuevo emerja.
+2. **La cohesión tribal explicada por Nomos era parcialmente impuesta**: IMI/MIG
+   deberían caer o, al menos, dejar de crecer al mismo ritmo tras el switch —
+   si la pertenencia tribal seguía explicando igual la psicología individual
+   sin el refuerzo providencial, la cohesión era genuina, no solo forzada.
+3. **Los agentes "en tensión" (ver `Nomos.en_armonia`) se desvían primero y más
+   fuerte** que los "en armonía" — el conflicto latente entre vocación impuesta
+   y arquetipo real predice quién rompe antes el patrón de conducta previo.
+4. **El acto de ruptura puede generar mito sobre sí mismo**: si el
+   `MythologyEngine` cristaliza un `mito_moral` o `escatología` anclado
+   temporalmente cerca del día del switch, es la prueba más fuerte de que el
+   sistema no solo reacciona — narra su propia pérdida de orden sin que nadie
+   lo haya escrito.
+5. **La cooperación bajo Nomos no era puramente genuina**: si `bond_strength`
+   medio cae tras el switch más de lo explicable por mortalidad/azar, parte de
+   la cohesión social previa dependía del canal de vocación, no solo de la
+   psique nativa de cada agente.
+
+## Variables
+
+- **Independiente**: condición — `control` (Nomos activo todo el run, sin
+  Serpiente, el orden nunca se rompe) / `tratamiento` (Nomos + Serpiente, el
+  switch dispara cuando emerja — día variable, no fijo).
+- **Dependientes** (todas ya instrumentadas, `core/metrics/emergence.py`):
+  `kl_mean`, `mig`, `imi` (divergencia/cohesión arquetípica tribal),
+  `vfe_global` (proxy de incertidumbre del inconsciente colectivo),
+  `behavioral_kl_mean`, `behavioral_intra_tribe_dispersion` (divergencia e
+  idiosincrasia conductual), `field_kl_mean` (divergencia de campos locales),
+  `n_tribes`, `n_alive`. Más el evento mismo: `eden_event` (día, agente,
+  acción de desafío, vocación, si estaba en armonía o en tensión, snapshot
+  arquetípico completo).
+- **Controles**: mismo `seed_file` + `seed` entre `control` y `tratamiento` de
+  una misma réplica (mismo mundo, misma población inicial — la única
+  diferencia es si la Serpiente existe). `Nomos(seed=seed+100)` y
+  `Serpiente(seed=seed+101)` derivados del seed de la réplica, reproducibles.
+
+## Método
+
+- **Arnés**: `scripts/run_eden_experiment.py`, modo headless (clock + WorldCore
+  + AgentCore desnudos, sin BD/narrativa/Obsidian/UI — mismo criterio que
+  `ab_interpretive.py`/`run_robustness.py`, ver `docs/ARCHITECTURE.md` §6).
+- **Análisis**: ventana de `_VENTANA_DIAS = 60` días anclada al evento (no al
+  calendario) — el switch no cae en un día fijo, depende de cuándo la
+  Serpiente encuentra y tienta a un agente elegible y ese agente resuelve
+  desafío en su propio colapso. Para `control` no hay evento: se reporta el
+  run completo como baseline sin ventana "post".
+- **Escalas, en dos pasadas** (acordado con Marcos 2026-10-20):
+  - **Piloto**: `data/seeds/eden_pilot_10.yaml` (10 agentes, seed=42),
+    varias semillas de réplica, para calibrar si los umbrales de elegibilidad
+    (`_REBELDE_MIN`/`_TRICKSTER_MIN`/`_INDIVIDUACION_MIN` en `serpent.py`,
+    `_TENTACION_UMBRAL`) dejan pasar un switch en un horizonte razonable de
+    días, o si hay que recalibrarlos.
+  - **Confirmatoria**: `data/seeds/100_personas.yaml`, N réplicas vía el mismo
+    arnés (o adaptando `run_robustness.py`), para ver si el patrón del piloto
+    aguanta a escala y con más diversidad psicológica inicial.
+- **Dónde corre**: ambas pasadas se dejan para la PC personal de Marcos — esta
+  máquina (equipo de oficina) resultó demasiado lenta incluso para la suite de
+  tests completa (~20 min para 480 tests). El smoke test de este commit (1
+  semilla, 5 días, 10 agentes) sí corrió acá solo para verificar que el arnés
+  no tiene errores de plomería.
+
+## Resultados
+
+**PENDIENTE** — no se corrió ninguna réplica real todavía, solo el smoke test
+de plomería (1 semilla, 5 días) que no alcanza para que el switch dispare ni
+para que las métricas se estabilicen. Esta sección se completa cuando Marcos
+corra el piloto (n=10) y la confirmatoria (n=100) en su equipo. No hay datos
+inventados ni proyectados acá — ver `Leyes/Confidencialidad.md` del vault.
+
+Mientras tanto, lo que SÍ está verificado (ver
+`tests/test_eden_integration.py`): con un agente forzado a perfil
+rebelde/trickster extremo, el circuito completo (vocación asignada → Serpiente
+tienta → colapso nativo del agente resuelve desafío → switch dispara → Nomos
+se apaga global y abruptamente → el evento queda registrado) corre de punta a
+punta en una población de juguete (5 agentes, 30 días). Eso confirma que el
+*mecanismo* funciona; no dice nada todavía sobre si el *patrón* (anomia,
+desviación diferencial, mitologización del evento) aparece con psicologías
+generadas al azar en vez de forzadas a mano.
+
+## Próximos pasos
+
+1. Correr el piloto (`--seed-file data/seeds/eden_pilot_10.yaml`, varias
+   semillas, `--days` suficiente para varias ventanas de 60 días) y revisar
+   cuántas réplicas disparan el switch — si casi ninguna, recalibrar
+   `_PROB_CONTACTO_DIARIO`/umbrales de elegibilidad en `serpent.py` antes de
+   gastar tiempo en la confirmatoria.
+2. Con el piloto calibrado, correr la confirmatoria sobre `100_personas.yaml`.
+3. Completar esta sección de Resultados con los datos reales.
+4. Decidir con Marcos si algo de esto se generaliza al tronco principal del
+   proyecto o queda archivado como experimento de rama.
