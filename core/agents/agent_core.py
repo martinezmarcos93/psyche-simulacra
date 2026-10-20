@@ -27,9 +27,15 @@ from .psyche.episodic_memory import EpisodicMemory, MemoryRecord
 from .psyche.dissociation import DissociativeState, select_tipo, ANSIEDAD_UMBRAL, DIAS_UMBRAL, DIAS_PERMANENCIA
 from .psyche.grief import GriefState, duracion_por_bond
 from .psyche.ancestral import UnprocessedGrief, _significance
+from core.social.nomos import Nomos
+from core.social.serpent import Serpiente
 
 if TYPE_CHECKING:
     from core.world import WorldCore
+
+# Experimento EDEN — desactivado por defecto; no cambia nada del comportamiento
+# existente a menos que se active explícitamente (ver docs/experiments/).
+_EDEN_ENABLED = os.environ.get("EDEN_ENABLED", "0") == "1"
 
 # Pool de nombres para la descendencia (nombres no usados por los fundadores)
 _NOMBRES_POOL = [
@@ -162,6 +168,12 @@ class AgentCore:
         # Roles sociales emergentes — Hito H
         self._social_roles:     list[SocialRole]   = []
 
+        # Experimento EDEN: orden providencial + tentadora. Ausentes (None) salvo
+        # que EDEN_ENABLED=1 — no cambian nada del comportamiento por defecto.
+        self.nomos:      Nomos      | None = Nomos(seed=seed + 100) if _EDEN_ENABLED else None
+        self.serpiente:  Serpiente  | None = Serpiente(seed=seed + 101) if _EDEN_ENABLED else None
+        self.eden_event: dict | None = None
+
     # ── Population management ─────────────────────────────────────────────────
 
     def add_agent(self, agent: Agent) -> None:
@@ -205,9 +217,25 @@ class AgentCore:
             action = agent.decide_action(
                 tp, snapshot, local_field, hay_aliados,
                 mythology_engine=self.mythology_engine,
+                nomos=self.nomos,
+                serpiente=self.serpiente,
             )
             if action is not None:
                 actions.append(action)
+
+            # Experimento EDEN: ¿el colapso de ESTE tick fue el acto de desafío
+            # que dispara el switch? Solo agentes tentados por la Serpiente
+            # (cruzaron su umbral) y solo si el colapso resolvió no-cooperación.
+            # El acto decide el switch, no al revés (ver core/social/serpent.py).
+            if (
+                self.nomos is not None and self.nomos.enabled
+                and self.serpiente is not None
+                and self.serpiente.tentado(agent.id)
+                and agent.last_collapse_tick == tp.tick
+                and agent.behavioral_state.ultimo_colapso in
+                    ("competencia", "aislamiento", "manipulacion")
+            ):
+                self._trigger_eden_switch(agent, tp)
 
         # Resolución de interacciones sociales en la zona (Fase 7)
         self.interaction_engine.process_zone_interactions(
@@ -256,8 +284,36 @@ class AgentCore:
                     self.social_network.set_bond(agent.id, other.id, min(1.0, b_ao + 0.05))
                     self.social_network.set_bond(other.id, agent.id, min(1.0, b_oa + 0.05))
 
+    def _trigger_eden_switch(self, agent: Agent, tp: TimePoint) -> None:
+        """
+        Experimento EDEN: apaga a Nomos de forma abrupta y global, disparado
+        por el acto de desafío de UN agente tentado — ver on_tick(). Registra
+        el evento (no se usa para decidir nada hacia atrás, solo observabilidad).
+        """
+        self.nomos.disable()
+        self.eden_event = {
+            "dia":              tp.dia_simulado,
+            "tick":             tp.tick,
+            "agent_id":         agent.id,
+            "agent_nombre":     agent.nombre,
+            "accion_desafio":   agent.behavioral_state.ultimo_colapso,
+            "vocacion":         self.nomos.vocacion_de(agent.id),
+            "en_armonia":       self.nomos.en_armonia(agent.id),
+            "archetype_snapshot": agent.archetypes.to_dict(),
+        }
+
     def on_day(self, tp: TimePoint) -> None:
         """Called once per simulated day — runs death checks and social dynamics."""
+        # 0. Experimento EDEN: asignar vocación a agentes nuevos (idempotente —
+        #    cubre nacimientos sin reasignar a quienes ya la tienen) y que la
+        #    Serpiente visite a los elegibles vivos, solo mientras Nomos siga
+        #    activo (una vez roto el orden ya no hay nada que tentar).
+        if self.nomos is not None:
+            vivos_archetypes = {a.id: a.archetypes for a in self.agents.values() if a.is_alive}
+            self.nomos.assign_vocaciones(vivos_archetypes)
+            if self.nomos.enabled and self.serpiente is not None:
+                self.serpiente.visitar(vivos_archetypes)
+
         # 1. Decaimiento y evolución del campo memético global (Fase 7)
         self.collective_field.decay()
 

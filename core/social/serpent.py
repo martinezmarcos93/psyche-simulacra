@@ -34,6 +34,10 @@ _TENTACION_BIAS: dict[str, float] = {
 
 _ACCIONES = ("cooperacion", "competencia", "aislamiento", "manipulacion")
 
+# Fracción esperada de agentes elegibles vivos que la Serpiente contacta en
+# un día dado — no visita a todos a la vez. Constante Capa A, elegida a mano.
+_PROB_CONTACTO_DIARIO = 0.5
+
 
 def es_elegible(arch: ArchetypeVector) -> bool:
     """
@@ -99,3 +103,17 @@ class Serpiente:
     def influence(self, agent_id: str) -> dict[str, float]:
         """{acción: delta} — vacío si el agente todavía no cruzó el umbral."""
         return dict(_TENTACION_BIAS) if self.tentado(agent_id) else {}
+
+    def visitar(self, archetypes: dict[str, ArchetypeVector]) -> None:
+        """
+        Un día de actividad de la Serpiente sobre la población viva: a cada
+        agente elegible lo contacta con probabilidad `_PROB_CONTACTO_DIARIO`
+        (RNG propio, reproducible vía `seed`); si no lo contacta (o no es
+        elegible), su tentación decae. Pensado para llamarse una vez por día
+        desde el orquestador (ver `AgentCore.on_day`).
+        """
+        for agent_id, arch in archetypes.items():
+            if es_elegible(arch) and self._rng.random() < _PROB_CONTACTO_DIARIO:
+                self.tentar(agent_id, arch)
+            else:
+                self.decaer(agent_id)

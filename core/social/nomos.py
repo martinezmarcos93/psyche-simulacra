@@ -90,13 +90,18 @@ class Nomos:
 
     def assign_vocaciones(self, archetypes: dict[str, ArchetypeVector]) -> None:
         """
-        Asigna a cada agente una vocación — en armonía o en tensión con su
-        propio arquetipo, decidido por agente (RNG propio de Nomos,
-        reproducible vía `seed`). No es una contradicción universal: refleja
-        que en una sociedad impuesta hay quienes coinciden genuinamente con
-        su lugar y quienes no.
+        Asigna a cada agente SIN vocación todavía una — en armonía o en
+        tensión con su propio arquetipo, decidido por agente (RNG propio de
+        Nomos, reproducible vía `seed`). No es una contradicción universal:
+        refleja que en una sociedad impuesta hay quienes coinciden
+        genuinamente con su lugar y quienes no.
+
+        Idempotente por agente: llamarlo de nuevo (p. ej. una vez por día,
+        para cubrir nacimientos) no reasigna a quien ya tiene vocación.
         """
         for agent_id, arch in archetypes.items():
+            if agent_id in self._vocaciones:
+                continue
             en_armonia = self._rng.random() < _PROB_EN_ARMONIA
             vocacion = (
                 self._vocacion_en_armonia(arch) if en_armonia

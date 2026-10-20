@@ -41,6 +41,21 @@ def test_no_todos_los_agentes_quedan_en_la_misma_condicion():
     assert estados == {True, False}
 
 
+def test_assign_vocaciones_es_idempotente_por_agente():
+    """Llamarlo de nuevo (p. ej. para cubrir nacimientos) no reasigna a quien
+    ya tiene vocación, aunque el RNG hubiera dado otro resultado."""
+    nomos = Nomos(seed=3)
+    nomos.assign_vocaciones({"viejo": _REBELDE})
+    vocacion_antes = nomos.vocacion_de("viejo")
+    armonia_antes = nomos.en_armonia("viejo")
+
+    nomos.assign_vocaciones({"viejo": _REBELDE, "nuevo": _SOCIABLE})
+
+    assert nomos.vocacion_de("viejo") == vocacion_antes
+    assert nomos.en_armonia("viejo") == armonia_antes
+    assert nomos.vocacion_de("nuevo") in VOCACIONES
+
+
 def test_asignacion_es_reproducible_por_seed():
     archetypes = {"a1": _REBELDE, "a2": _SOCIABLE, "a3": _arch()}
     n1 = Nomos(seed=42)

@@ -100,3 +100,32 @@ def test_influence_aleja_de_la_cooperacion_tras_el_umbral():
     bias = serpiente.influence("a1")
     assert bias["cooperacion"] < 0
     assert bias["competencia"] > 0
+
+
+# ── visitar (un día de actividad sobre la población) ───────────────────────
+
+def test_visitar_no_elegibles_nunca_acumula():
+    serpiente = Serpiente(seed=1)
+    no_elegibles = {f"a{i}": _arch(rebelde=0.2, trickster=0.2, persona=0.8) for i in range(10)}
+    for _ in range(10):
+        serpiente.visitar(no_elegibles)
+    assert all(serpiente.nivel(aid) == 0.0 for aid in no_elegibles)
+
+
+def test_visitar_eventualmente_tienta_a_elegibles_con_contacto_sostenido():
+    serpiente = Serpiente(seed=2)
+    elegibles = {f"a{i}": _arch(rebelde=0.9, trickster=0.9, persona=0.1) for i in range(20)}
+    for _ in range(30):
+        serpiente.visitar(elegibles)
+    assert any(serpiente.tentado(aid) for aid in elegibles)
+
+
+def test_visitar_es_reproducible_por_seed():
+    elegibles = {f"a{i}": _arch(rebelde=0.9, trickster=0.9, persona=0.1) for i in range(10)}
+    s1 = Serpiente(seed=99)
+    s2 = Serpiente(seed=99)
+    for _ in range(10):
+        s1.visitar(elegibles)
+        s2.visitar(elegibles)
+    for aid in elegibles:
+        assert s1.nivel(aid) == s2.nivel(aid)
