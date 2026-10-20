@@ -25,7 +25,7 @@ from .quantum.superposition import BehavioralState
 from .quantum.collapse import collapse_state
 
 if TYPE_CHECKING:
-    pass
+    from core.social.nomos import Nomos
 
 _DIAS_HAMBRE_MUERTE   = 3
 _DIAS_SED_MUERTE      = 3
@@ -405,6 +405,7 @@ class Agent:
         collective_field: CollectiveField | None = None,
         hay_aliados: bool = False,
         mythology_engine: "MythologyEngine | None" = None,
+        nomos: "Nomos | None" = None,
     ) -> WorldAction | None:
         """Devuelve una WorldAction o None. Integra psicología en la decisión."""
         if not self.is_alive:
@@ -449,11 +450,11 @@ class Agent:
 
         # Aislamiento crítico: el agente busca interacción aunque no sea su hora de socializar
         if self.needs.social_override_active():
-            return self._decide_via_collapse(tp, snapshot, collective_field, hay_aliados, mythology_engine)
+            return self._decide_via_collapse(tp, snapshot, collective_field, hay_aliados, mythology_engine, nomos)
 
         # Colapso cuántico para decisiones no-críticas
         if actividad == "interactuar":
-            return self._decide_via_collapse(tp, snapshot, collective_field, hay_aliados, mythology_engine)
+            return self._decide_via_collapse(tp, snapshot, collective_field, hay_aliados, mythology_engine, nomos)
 
         # Rutina normal de la agenda
         if actividad in ("dormir", "descansar"):
@@ -501,6 +502,7 @@ class Agent:
         collective_field: CollectiveField | None = None,
         hay_aliados: bool = False,
         mythology_engine: "MythologyEngine | None" = None,
+        nomos: "Nomos | None" = None,
     ) -> WorldAction | None:
         """
         Usa el motor cuántico para decidir la acción en horas sociales.
@@ -546,6 +548,12 @@ class Agent:
                 self.last_perceived_event = pe
             interpretive_influence = pe.action_bias()
 
+        # Experimento EDEN: la vocación impuesta por Nomos, si está presente y
+        # activo, compite como un canal más — nunca decide la acción directamente
+        # (ver core/social/nomos.py). None si Nomos está ausente/desactivado o el
+        # agente no tiene vocación asignada — comportamiento byte-idéntico previo.
+        nomos_influence = nomos.vocacion_bias(self.id) if nomos is not None else None
+
         accion = collapse_state(
             state            = self.behavioral_state,
             context          = context,
@@ -554,6 +562,7 @@ class Agent:
             trait_biases     = trait_biases,
             field_influence  = field_influence,
             interpretive_influence = interpretive_influence,
+            nomos_influence  = nomos_influence,
             noise            = self._mind_ruido,
             rng              = self._rng,
         )

@@ -18,6 +18,11 @@ _WEIGHT_FIELD        = 0.10
 # default preserva el comportamiento byte-idéntico previo.
 _WEIGHT_INTERPRETIVE = float(os.getenv("INTERPRETIVE_WEIGHT", "0.15"))
 
+# Experimento EDEN — la vocación impuesta por Nomos (ver core/social/nomos.py)
+# compite como un canal más, exactamente igual que el interpretativo. None
+# (Nomos ausente o desactivado) preserva el comportamiento byte-idéntico previo.
+_WEIGHT_NOMOS = float(os.getenv("NOMOS_WEIGHT", "0.20"))
+
 
 def collapse_state(
     state:            BehavioralState,
@@ -27,6 +32,7 @@ def collapse_state(
     trait_biases:     dict[str, float],
     field_influence:  dict[str, float] | None = None,
     interpretive_influence: dict[str, float] | None = None,
+    nomos_influence:  dict[str, float] | None = None,
     noise:            float                   = 0.0,
     rng:              random.Random | None    = None,
 ) -> str:
@@ -45,6 +51,9 @@ def collapse_state(
         interpretive_influence : {acción: delta} de la ecuación personal del agente
                                  (InterpretiveFilter, Fase 1). None si el filtro
                                  está desactivado.
+        nomos_influence  : {acción: delta} de la vocación impuesta por Nomos
+                                 (Experimento EDEN). None si Nomos está ausente,
+                                 desactivado, o el agente no tiene vocación.
         noise            : 0..1 — incoherencia interna del MentalVault (Fase 2). Aplana
                                  las probabilidades hacia la uniforme: más incoherencia →
                                  más entropía en el colapso (la "neurosis" emerge). 0.0
@@ -64,11 +73,12 @@ def collapse_state(
         ctx_delta     = _context_bias(action, context)     * _WEIGHT_CONTEXT
         field_delta   = (field_influence or {}).get(action, 0.0) * _WEIGHT_FIELD
         interp_delta  = (interpretive_influence or {}).get(action, 0.0) * _WEIGHT_INTERPRETIVE
+        nomos_delta   = (nomos_influence or {}).get(action, 0.0) * _WEIGHT_NOMOS
 
         probs[action] = max(
             0.01,
             probs[action] + arch_delta + complex_delta + trait_delta
-            + ctx_delta + field_delta + interp_delta,
+            + ctx_delta + field_delta + interp_delta + nomos_delta,
         )
 
     # Renormalizar
