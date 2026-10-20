@@ -86,11 +86,40 @@ que queda se parece a la que había, o se reorganiza?
 
 ## Resultados
 
-**PENDIENTE** — no se corrió ninguna réplica real todavía, solo el smoke test
-de plomería (1 semilla, 5 días) que no alcanza para que el switch dispare ni
-para que las métricas se estabilicen. Esta sección se completa cuando Marcos
-corra el piloto (n=10) y la confirmatoria (n=100) en su equipo. No hay datos
-inventados ni proyectados acá — ver `Leyes/Confidencialidad.md` del vault.
+**Preliminar (1 réplica de 2, piloto n=10)** — corrida real vía
+`run_eden_experiment.py`, `data/seeds/eden_pilot_10.yaml`, 90 días, semillas
+1 y 2 (control + tratamiento c/u → 4 corridas). Salida en
+`data/experiments/eden_pilot_v1/` (local, no versionada — ver `.gitignore`).
+Confirmatoria (n=100) todavía PENDIENTE.
+
+- **Semilla 1**: el switch no disparó en 90 días (ni camino rebelde/trickster
+  ni individuado cruzaron umbral en esta corrida).
+- **Semilla 2**: el switch disparó el **día 66**, agente `brennus`, acción de
+  desafío `aislamiento`, vocación `mediador` (en tensión). Importante: no fue
+  por el camino rebelde/trickster (quedaron bajos: 0.18/0.26) sino por el
+  **camino individuado** — `self=0.98` y `sombra=1.00` convergieron a casi el
+  mismo valor (tensión mínima), lo que `individuacion_index()` lee como
+  integración alta (Self que absorbió a la Sombra en vez de reprimirla, no
+  "ausencia de sombra"). Esos valores NO estaban en el YAML inicial — son el
+  resultado de ~66 días de vida simulada (trauma/aislamiento empujando self y
+  sombra, ver `_TRANSFORMATIONS` en `archetypes.py`). Esto confirma que el
+  mecanismo dispara con psicologías nacidas normales, sin necesitar un perfil
+  extremo desde el día 0 (a diferencia del ejemplo forzado usado para
+  verificar el circuito en `tests/test_eden_integration.py`).
+
+**Corrección a una nota interna previa**: un chequeo rápido sobre los
+arquetipos *del día 0* de `eden_pilot_10.yaml` y de `100_personas.yaml` no
+encontró ningún agente elegible (máximo individuación observado: 0.50 contra
+el umbral de 0.70). Esa nota era correcta sobre el día 0 pero incompleta: no
+tiene en cuenta que los arquetipos derivan con la vida simulada. El resultado
+de la semilla 2 arriba muestra que la deriva sí puede cruzar el umbral sin
+ayuda. Sigue siendo una observación de n=1 corrida exitosa sobre 2 — no
+alcanza para saber con qué frecuencia pasa esto a 90 días, ni si el camino
+rebelde/trickster alguna vez dispara en una población generada
+proceduralmente (en las corridas vistas hasta ahora, nunca fue ese camino).
+
+Lo que sigue sin alcanzar (igual que antes): más réplicas del piloto para
+estimar la tasa de disparo, y la confirmatoria a n=100.
 
 Mientras tanto, lo que SÍ está verificado (ver
 `tests/test_eden_integration.py`): con un agente forzado a perfil
@@ -104,12 +133,16 @@ generadas al azar en vez de forzadas a mano.
 
 ## Próximos pasos
 
-1. Correr el piloto (`--seed-file data/seeds/eden_pilot_10.yaml`, varias
-   semillas, `--days` suficiente para varias ventanas de 60 días) y revisar
-   cuántas réplicas disparan el switch — si casi ninguna, recalibrar
-   `_PROB_CONTACTO_DIARIO`/umbrales de elegibilidad en `serpent.py` antes de
-   gastar tiempo en la confirmatoria.
+1. Ampliar el piloto a más semillas (≥10, no solo 1 y 2) sobre
+   `eden_pilot_10.yaml` para estimar la tasa de disparo real — con 2 semillas
+   ya se vio 1 de 2, insuficiente para saber si es ~50% o una casualidad.
+   Si la tasa queda muy baja incluso con más semillas, recalibrar
+   `_PROB_CONTACTO_DIARIO`/umbrales de elegibilidad en `serpent.py` (en
+   particular revisar si el camino rebelde/trickster es alcanzable alguna vez
+   por deriva natural, dado que en las corridas vistas hasta ahora solo
+   disparó el camino individuado).
 2. Con el piloto calibrado, correr la confirmatoria sobre `100_personas.yaml`.
-3. Completar esta sección de Resultados con los datos reales.
+3. Completar la sección de Resultados con los datos agregados (no solo la
+   primera réplica exitosa).
 4. Decidir con Marcos si algo de esto se generaliza al tronco principal del
    proyecto o queda archivado como experimento de rama.
