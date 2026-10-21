@@ -7,6 +7,14 @@ handoff de cierre) — no hay roadmap previo en `src/`, es un experimento nuevo.
 
 ---
 
+> **Actualización 2026-10-21:** EDEN entró a `main` junto con el panel
+> multicorrida (ADR-001). Los tres escenarios se eligen con `EDEN_MODE=off|orden|eden`
+> (`EDEN_ENABLED=1` = `eden`) o desde el panel (*Mundo libre / Orden permanente / Edén*),
+> que permite correr las réplicas pareadas por semilla sin scripts. En el panel, la
+> semilla 2 del piloto de 10 agentes reproduce el switch del día 66 (`brennus`).
+> Corrida a escala del 2026-10-20 (100 agentes hasta extinción, semilla 1):
+> `simulacion/_reportes/2026-10-20-eden-100-extincion/`.
+
 ## Premisa
 
 Lectura del mito cristiano de la prueba: Dios crea, ordena y sostiene a los
