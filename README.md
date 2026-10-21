@@ -18,17 +18,28 @@ El experimento busca responder:
 - ¿El héroe emerge del poder o de la narrativa?
 - ¿La cooperación o la jerarquía aparece primero?
 - ¿Cuánto tarda una tribu en desarrollar una identidad arquetípica diferenciable de otra?
+- ¿Qué pasa con una sociedad cuando el orden que la sostenía se retira de golpe? (experimento EDEN)
 
 ---
 
 ## Arquitectura
 
 ```
-[ Obsidian Vault ] <──> [ Motor Python ] <──> [ Dashboard Streamlit ]
-  Perfiles vivos          ABM tick-based         Visualización del
-  Red simbólica           Lógica psico-social     inconsciente colectivo
-  Narrativa emergente     Mecánicas cuánticas
-  Leyendas tribales       Tribus + Mitología
+[ Obsidian Vault ] <──> [ Motor Python ] <──> [ Panel NiceGUI (navegador) ]
+  Perfiles vivos          ABM tick-based         Tandas de corridas en paralelo
+  Red simbólica           Lógica psico-social    Monitor en vivo de la elegida
+  Narrativa emergente     Mecánicas cuánticas    Visor de estado final
+  Leyendas tribales       Tribus + Mitología     Comparación entre corridas
+```
+
+```
+            Panel de corridas (python main.py, puerto 8080)
+                 │  lanza procesos · lee estado.json · pide detener.flag
+     ┌───────────┼──────────────────────────┐
+     ▼           ▼                          ▼
+ [Corrida 1]  [Corrida 2]   …          [Corrida N]
+ proceso propio, carpeta propia (data/corridas/…): config.json, estado.json,
+ BD SQLite, checkpoints, métricas, vault — y su propio monitor en vivo
 ```
 
 ```
@@ -102,8 +113,15 @@ SimulationClock (tick = 1 hora simulada)
 ### Ecuación Personal (percepción y cognición individual)
 - **InterpretiveFilter** (`INTERPRETIVE_FILTER_ENABLED=1`) — cada agente filtra el estímulo físico a través de 4 operadores content-free (atención, causa, evaluación afectiva, comparación social) antes de que llegue al colapso conductual; produce un `PerceivedEvent` con `valence`/`arousal` subjetivos y, por préstamo de vocabulario ya cristalizado (nunca inventado), `narrative_frame`/`attributed_cause`/`moral_judgment`. Desactivado por defecto — el experimento A/B no encontró efecto medible de divergencia cultural a la escala probada (ver `docs/experiments/`)
 - **MentalVault** (`MENTAL_VAULT_ENABLED=1`, requiere el filtro ON) — mini cerebro por agente: grafo de nodos con enlazado probabilístico y resonancia emergente, expone `worldview_coherence()`. Desactivado por defecto, misma razón que arriba
-- **ArchetypeRecalibrator** (`ARCHETYPE_RECALIBRATION_ENABLED=1`, requiere el filtro ON) — las vivencias de cada agente recalibran su vector arquetípico: la resonancia de cada `PerceivedEvent` se acumula aparte del vector, decae si no se repite y solo se consolida si se sostiene; el dominante es estable (histéresis) y su cambio es un evento de "reorganización". Desactivado por defecto. Diseño: `docs/proposals/2026-10-04-jpaf-ideas-aplicables.md`
+- **ArchetypeRecalibrator** (`ARCHETYPE_RECALIBRATION_ENABLED=1`, requiere el filtro ON) — las vivencias de cada agente recalibran su vector arquetípico: la resonancia de cada `PerceivedEvent` se acumula aparte del vector, decae si no se repite y solo se consolida si se sostiene; el dominante es estable (histéresis) y su cambio es un evento de "reorganización". Desactivado por defecto y **experimental**: todavía no está calibrado (en las pruebas la población termina en monocultivo de `sombra`). Diseño: `docs/proposals/2026-10-04-jpaf-ideas-aplicables.md`
 - Detalle completo de los dos primeros: `docs/AGENT_BRAIN.md`, `docs/MENTAL_VAULT.md`, `docs/EMERGENCE.md`
+
+### Experimento EDEN (orden providencial y libre albedrío)
+Lectura del mito del Edén trasladada al modelo: una fuerza ordenadora organiza la sociedad y una figura tentadora puede romperla. Se elige con `EDEN_MODE` (o desde el panel):
+- **`off` — Mundo libre** (default): sin fuerza ordenadora; comportamiento histórico del motor.
+- **`orden` — Orden permanente**: **Nomos** (`core/social/nomos.py`) asigna a cada agente una de cuatro vocaciones (guardián, cuidador, artesano, mediador), sorteando por agente si queda *en armonía* con su arquetipo o *en tensión* con él; la vocación compite como un canal más en el colapso conductual (`NOMOS_WEIGHT`), nunca decide sola.
+- **`eden` — Edén**: además, la **Serpiente** (`core/social/serpent.py`) visita a los agentes elegibles (rebelde **y** trickster ≥ 0,6, o índice de individuación ≥ 0,7 — en las corridas observadas siempre disparó por este segundo camino) y, si cruzan su umbral de tentación, empuja su colapso (`SERPENT_WEIGHT`). Si un agente tentado resuelve un acto de desafío (competencia, aislamiento, manipulación), **el Nomos se apaga para siempre y para todos**. El evento queda en `data/metrics/eden_event.json` (día, agente, acción, vocación, armonía y perfil arquetípico completo) y la métrica `nomos_active` marca el antes/después.
+- Ficha del experimento y resultados: `docs/experiments/2026-10-20-eden-libre-albedrio.md`. Corrida A/B headless: `scripts/run_eden_experiment.py`.
 
 ### Tribus y divergencia cultural
 - **TribeManager** — clustering via `greedy_modularity_communities` (NetworkX) cada 30 días
@@ -121,7 +139,7 @@ SimulationClock (tick = 1 hora simulada)
 - Cooldown de 50 días entre construcciones por tribu
 
 ### Narrativa con LLM
-- **OllamaDaemon** — auto-arranca `ollama serve` si el puerto 11434 no responde; verifica e instala el modelo configurado; invocado al inicio de `run_simulation.py` y `visualizer.py`
+- **OllamaDaemon** — auto-arranca `ollama serve` si el puerto 11434 no responde; verifica e instala el modelo configurado; invocado por `run_simulation.py`, `visualizer.py` y por cada corrida del panel que tenga la narrativa activada (en el panel viene apagada por defecto)
 - **NarratorEngine** — daemon en background procesando cola de eventos narrativos
 - 4 tipos de leyendas generadas con Ollama (llama3.2 u otro modelo local):
   - **Mito fundacional** — al formarse una nueva tribu
@@ -136,6 +154,8 @@ SimulationClock (tick = 1 hora simulada)
 - **VFE proxy** — entropía de Shannon del campo colectivo (incertidumbre del inconsciente)
 - **IMI** — fracción de varianza arquetípica explicada por membresía tribal; R² estilo Jain-Dubes
 - **MIG** — Mean Information Gain: I(z_k;v)/H(z_k) sobre 12 dimensiones arquetípicas; cuantifica cuánta información aporta la tribu sobre la psicología individual (Chen et al. 2018)
+- **Tribus reales vs. aislados** — `n_tribes_multi` (tribus de ≥2 miembros) y `n_isolates` (agentes sin vínculos fuertes, que el clustering cuenta como tribu de uno); `behavioral_kl_multi_mean` controla ese sesgo
+- **`reorganizations_total`** (recalibración) y **`nomos_active`** (EDEN)
 - **Divergencia conductual/de campo (inter-tribu) e idiosincrasia (intra-tribu)** — `behavioral_kl_mean`/`field_kl_mean` miden qué tan distinto actúan y sienten las tribus entre sí; `behavioral_intra_tribe_dispersion` mide la variación de conducta dentro de cada tribu — instrumento pensado para la Ecuación Personal (ver `docs/experiments/`)
 - Exportación automática a `data/metrics/emergence_series.csv` y `emergence_summary.json`
 - `scripts/run_robustness.py` — suite de N ejecuciones con semillas distintas, salida JSON con KL/VFE/IMI/MIG
@@ -157,7 +177,7 @@ Sistema opcional que conecta múltiples instancias de PSYCHE SIMULACRA a través
 - **SQLite** (WAL) — snapshots de agentes, clima, escenario, muertes, sesiones
 - **CheckpointManager** — guardado atómico JSON cada 10 días + al apagar
 - **Obsidian Vault** — sincronización diaria: `vault/Personas/`, `vault/Colectivo/`, `vault/Tribus/`, `vault/Colectivo/Leyendas/`
-- **Observatorio NiceGUI** — interfaz web en tiempo real (puerto 8080): 9 tabs con mapa hexagonal, red social cuántica, campo colectivo, tendencias, inspector de agentes, registro de sueños, civilización y Zona Liminal. Abre automáticamente al ejecutar `main.py`
+- **Panel de corridas NiceGUI** (`python main.py`, puerto 8080) — lanza y sigue varias corridas en paralelo, cada una aislada en su carpeta; abre el **monitor en vivo** de la que se elija (9 tabs: mapa hexagonal, red social cuántica, campo colectivo, tendencias, inspector de agentes, sueños, civilización y Zona Liminal) o el **visor de estado final** de una corrida terminada. Detalle en *Ejecución*
 - **Visualizador Pygame** (`scripts/visualizer.py`) — mapa hexagonal en tiempo real con zoom y panning; alternativa ligera al dashboard web
 
 ---
@@ -165,13 +185,19 @@ Sistema opcional que conecta múltiples instancias de PSYCHE SIMULACRA a través
 ## Escala temporal
 
 ```
-1 tick      = 1 hora simulada
-1 día       = 24 ticks
-~1 min real = 1 día simulado (a máxima velocidad headless)
-~1 hora real = ~60 días simulados
-
-Sesión nocturna de 8h → ~480 días simulados (> 1 año de vida del grupo)
+1 tick = 1 hora simulada
+1 día  = 24 ticks
 ```
+
+Velocidad real (100 agentes, medida 2026-10):
+
+| Modo | Velocidad aproximada |
+|------|----------------------|
+| Corrida del panel, sin narrativa (BD + vault) | ~0,5–1 s por día simulado (más rápido a medida que la población baja) |
+| Headless de investigación (`run_eden_experiment.py`, `ab_interpretive.py`) | ~0,4–0,5 s por día |
+| Con narrativa LLM (Ollama) | dominado por el LLM: puede llegar a ~1 min por día |
+
+Una sociedad de 100 personas hasta la extinción (~12–19 años simulados) tarda del orden de media hora a una hora sin narrativa.
 
 ---
 
@@ -214,6 +240,8 @@ psyche-simulacra/
 │   │   │   ├── complexes.py           ComplexProfile (6 complejos)
 │   │   │   ├── traits.py              TraitProfile (Big Five + clinico)
 │   │   │   ├── dreams.py              DreamGrammarEngine (5 capas, sueños compartidos)
+│   │   │   ├── interpretive_filter.py InterpretiveFilter (Ecuación Personal, Fase 1)
+│   │   │   ├── recalibration.py       ArchetypeRecalibrator (experimental)
 │   │   │   └── lindblad.py            LindBladChannel T1/T2 (decoherencia arquetipica)
 │   │   └── quantum/
 │   │       ├── superposition.py       BehavioralSuperposition
@@ -223,6 +251,8 @@ psyche-simulacra/
 │   │   ├── network.py                 SocialNetwork (NetworkX)
 │   │   ├── collective_field.py        CollectiveField
 │   │   ├── mythology.py               MythologyEngine
+│   │   ├── nomos.py                   Nomos — orden providencial (EDEN)
+│   │   ├── serpent.py                 Serpiente — tentación y switch (EDEN)
 │   │   └── tribe_manager.py           TribeManager + ICL local
 │   ├── narrative/
 │   │   ├── config.py                  OLLAMA_BASE_URL, modelo, flags
@@ -233,6 +263,8 @@ psyche-simulacra/
 │   ├── metrics/
 │   │   ├── emergence.py              EmergenceMetrics (KL, VFE, IMI, MIG)
 │   │   └── exporter.py               MetricsExporter (CSV + JSON)
+│   ├── runtime/
+│   │   └── corridas.py               CorridaConfig, carpetas, estado y entorno de cada corrida
 │   ├── liminal/                      Zona Liminal — cliente y portal
 │   │   ├── sim_identity.py           SIM_ID persistido (data/sim_id.txt)
 │   │   ├── portal_hex.py             PortalHex — posición determinista por seed
@@ -264,17 +296,27 @@ psyche-simulacra/
 │   ├── metrics/                      Series temporales de emergencia
 │   │   ├── emergence_series.csv
 │   │   └── emergence_summary.json
-│   ├── archive/                      Simulaciones completadas
+│   ├── corridas/                     Una carpeta por corrida del panel (no versionada)
+│   ├── poblaciones/                  Poblaciones generadas desde el panel (no versionada)
+│   ├── archive/                      Simulaciones completadas (sistema anterior)
 │   └── seeds/
 │       ├── initial_personas.yaml     15 agentes beta (perfiles extremos)
-│       └── 100_personas.yaml         100 agentes (generados proceduralmente)
+│       ├── 100_personas.yaml         100 agentes (generados proceduralmente)
+│       ├── rich_culture_100.yaml     100 agentes (variante de cultura rica)
+│       └── eden_pilot_10.yaml        10 agentes — piloto del experimento EDEN
 │
 ├── scripts/
 │   ├── run_simulation.py             Motor headless (argparse completo)
 │   ├── generate_personas.py          Generador procedural de agentes YAML
 │   ├── run_robustness.py             Suite de N ejecuciones paralelas
 │   ├── plot_emergence.py             Reporte PNG con 6 graficas (KL, MIG, IMI, VFE, scatter, supervivencia)
+│   ├── run_eden_experiment.py        A/B EDEN headless (control vs. tratamiento, pareado por semilla)
+│   ├── ab_interpretive.py, ab_sweep.py, run_ab_batch.py   A/B de la Ecuación Personal
 │   └── visualizer.py                 Visualizador Pygame en tiempo real
+│
+├── packaging/                        Instalador Windows: PyInstaller (.spec) + Inno Setup + build.bat
+│
+├── docs/                             Arquitectura, experimentos, decisiones (ADR), handoffs, guía de uso
 │
 ├── tests/                            560 tests (pytest)
 │   ├── test_agent.py
@@ -284,13 +326,16 @@ psyche-simulacra/
 │   ├── test_simulation.py
 │   ├── test_social.py
 │   ├── test_obsidian.py
-│   └── test_metrics.py              KL divergence, VFE, IMI, exporter
+│   ├── test_metrics.py              KL divergence, VFE, IMI, exporter
+│   ├── test_nomos.py, test_serpent.py, test_eden_integration.py   Experimento EDEN
+│   ├── test_recalibration.py        Recalibración arquetípica
+│   └── test_corridas.py             Panel multicorrida (incluye corrida real de punta a punta)
 │
 ├── src/                              Documentos de diseno originales
 │   └── archive/                      Roadmaps completados
 │
-├── liminal_server/                   Servidor LIMINAL ZONE (independiente)
-│   ├── main.py                       Punto de entrada del servidor
+├── liminal_server/                   Servidor LIMINAL ZONE (paquete; lo levanta el panel o se corre aparte)
+│   ├── main.py                       Punto de entrada (python liminal_server/main.py)
 │   ├── config.py                     Host, puerto, seed, PROTOCOL_VERSION
 │   ├── requirements.txt
 │   ├── core/
@@ -303,7 +348,7 @@ psyche-simulacra/
 │   └── protocol/
 │       └── schemas.py                Tipos de mensajes del protocolo
 │
-├── main.py                           Punto de entrada principal — abre NiceGUI en el browser
+├── main.py                           Punto de entrada único: panel / --corrida / --ver / --liminal-server
 ├── pyproject.toml
 └── requirements.txt
 ```
@@ -317,6 +362,10 @@ pip install -e ".[dev]"          # desarrollo + tests
 pip install -e .                 # solo produccion
 pip install -e ".[dashboard]"    # con Streamlit
 ```
+
+**Usuarios de Windows sin Python:** instalador `PsycheSimulacra-Setup-<versión>.exe`,
+que se construye con `packaging\build.bat` (ver [`packaging/README.md`](packaging/README.md)).
+Los datos del usuario van a `Documentos\PsycheSimulacra`.
 
 **Dependencias opcionales:**
 - `pygame` — para el visualizador en tiempo real
@@ -456,17 +505,36 @@ NARRATIVE_ENABLED=1                      # 0 para desactivar
 # Simulación
 CHECKPOINT_INTERVAL=10                   # días entre checkpoints automáticos
 DAYS_UNTIL_CLUSTERING=30                # días hasta primer clustering tribal
+LETHALITY_FACTOR=1.0                     # letalidad de catástrofes (<1: menos muertes, más trauma)
+
+# Natalidad
+PROB_REPRO_DIARIA=0.007                  # probabilidad diaria de concebir por par elegible
+BOND_REPRO_MIN=0.55                      # vínculo mínimo de la pareja
+REPRO_NEEDS_MAX=0.45                     # hambre/sed máxima para concebir
+REPRO_COOLDOWN_DIAS=180                  # descanso tras un nacimiento
+
+# Experimento EDEN
+EDEN_MODE=off                            # off | orden | eden  (EDEN_ENABLED=1 = eden)
+NOMOS_WEIGHT=0.20                        # peso de la vocación impuesta en el colapso
+SERPENT_WEIGHT=0.20                      # peso de la tentación en el colapso
 
 # Ecuación Personal (desactivada por defecto — ver docs/experiments/)
 INTERPRETIVE_FILTER_ENABLED=0            # 1 activa el InterpretiveFilter
 MENTAL_VAULT_ENABLED=0                   # 1 activa el MentalVault (requiere el filtro ON)
 ARCHETYPE_RECALIBRATION_ENABLED=0        # 1 activa la recalibración arquetípica (requiere el filtro ON)
+INTERPRETIVE_WEIGHT=0.15                 # peso del filtro en el colapso
+RECALIBRATION_GAIN=1.0                   # intensidad de la recalibración
 
 # Mitología (calibración — ver docs/experiments/)
 MYTH_CONTEXT_THRESHOLD=0.25              # umbral de contexto para nacer un proto-mito
 MYTH_TRANSMISSION_CHOQUE_VIOLENTO=1.00       # intensidad de transmisión — choque violento
 MYTH_TRANSMISSION_CONFLICTO_EXPLOTACION=0.50 # intensidad de transmisión — conflicto/explotación
 MYTH_TRANSMISSION_COOPERACION_PURA=0.25      # intensidad de transmisión — cooperación pura
+
+# Panel de corridas
+PSYCHE_HUB_PORT=8080                     # puerto del panel
+PSYCHE_DATOS_DIR=                        # carpeta de datos del usuario (default: data/; empaquetado: Documentos/PsycheSimulacra)
+PSYCHE_ABRIR_NAVEGADOR=1                 # 0 = no abrir el navegador (pruebas)
 ```
 
 Todas estas variables (y `EDEN_MODE`, `NOMOS_WEIGHT`, `SERPENT_WEIGHT`) se configuran por corrida desde el panel (`python main.py`), sin editar archivos: cada corrida guarda en su `config.json` exactamente lo que usó.
@@ -486,6 +554,7 @@ Todas estas variables (y `EDEN_MODE`, `NOMOS_WEIGHT`, `SERPENT_WEIGHT`) se confi
 | Visualizador alternativo | Pygame (`scripts/visualizer.py`) |
 | Narrativa LLM | Ollama (llama3.2, cliente stdlib sin deps externas) |
 | Zona Liminal (red) | websockets + asyncio (servidor headless) / threading (cliente) |
+| Distribución Windows | PyInstaller + Inno Setup (`packaging/`) |
 | Tests | pytest (560 tests) |
 
 ---
@@ -501,8 +570,11 @@ Los documentos de diseño están en `src/` y `docs/`:
 | `docs/ARCHETYPES.md` | Recorrido completo activación → resonancia → campo → cristalización → mito → conducta |
 | `docs/MENTAL_VAULT.md` | El mini cerebro por agente (Fase 2 de la Ecuación Personal) |
 | `docs/EMERGENCE.md` | Qué está diseñado vs. qué emerge en cada subsistema — checklist de auditoría |
+| `docs/GUIA_DE_USO.md` | Guía del panel para quien no conoce el código (también en el panel, *Guía de uso*) |
+| `docs/decisions/` | Decisiones de arquitectura (ADR-001: panel multicorrida) |
 | `docs/DEVELOPMENT_LOG.md` | Bitácora técnica sesión a sesión |
-| `docs/experiments/` | Experimentos con hipótesis, método, datos e interpretación (A/B de la Ecuación Personal, calibración de mitología) |
+| `docs/experiments/` | Experimentos con hipótesis, método, datos e interpretación (A/B de la Ecuación Personal, calibración de mitología, EDEN) |
+| `packaging/README.md` | Cómo construir el instalador de Windows |
 | `docs/handoffs/` | Handoffs de cierre de sesión — estado y pendientes para retomar |
 | `docs/Liminal_Zone.md` | Arquitectura de la Zona Liminal |
 | `src/01-PSYCHE_IDEAS_IMPLEMENTACION.md` | Backlog de ideas con estimaciones |
