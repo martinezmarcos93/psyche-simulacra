@@ -242,6 +242,32 @@ class TestComputeDay:
         m  = em.compute_day(1, agents, tm, cf)
         assert m.n_structures == 0
 
+    def test_nomos_active_default_true_sin_nomos(self):
+        """Sin Nomos (EDEN_ENABLED=0, el caso de siempre), nomos_active queda
+        en True por defecto — no hay orden providencial que pueda romperse."""
+        em = EmergenceMetrics()
+        agents = {}
+        tm = self._make_tribe_manager({})
+        cf = _make_field({"heroe": 0.5})
+        m  = em.compute_day(1, agents, tm, cf)
+        assert m.nomos_active is True
+
+    def test_nomos_active_refleja_el_enabled_de_nomos(self):
+        em = EmergenceMetrics()
+        agents = {}
+        tm = self._make_tribe_manager({})
+        cf = _make_field({"heroe": 0.5})
+        nomos_activo = MagicMock()
+        nomos_activo.enabled = True
+        nomos_apagado = MagicMock()
+        nomos_apagado.enabled = False
+
+        m_antes = em.compute_day(1, agents, tm, cf, nomos=nomos_activo)
+        m_despues = em.compute_day(2, agents, tm, cf, nomos=nomos_apagado)
+
+        assert m_antes.nomos_active is True
+        assert m_despues.nomos_active is False
+
     def test_metricas_numericamente_validas(self):
         em = EmergenceMetrics()
         arch_a = {**_UNIFORM_ARCH, "heroe": 0.9, "sombra": 0.1}

@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from core.social.tribe_manager import TribeManager
     from core.social.collective_field import CollectiveField
     from core.world.culture_engine import CultureEngine
+    from core.social.nomos import Nomos
 
 _EPSILON = 1e-9
 
@@ -81,6 +82,13 @@ class DayMetrics:
     behavioral_kl_multi_mean: float = 0.0  # behavioral_kl_mean solo entre tribus de >= _MIN_TRIBE_SIZE_KL
     # ── Recalibración arquetípica (ARCHETYPE_RECALIBRATION_ENABLED) ───────────
     reorganizations_total: int = 0    # reorganizaciones de dominante acumuladas entre los vivos
+    # ── Experimento EDEN ──────────────────────────────────────────────────────
+    # True mientras el orden providencial de Nomos sigue activo (o si Nomos ni
+    # siquiera existe en esta corrida — EDEN_ENABLED=0, valor por defecto).
+    # False desde el día del switch en adelante. Permite que el análisis A/B
+    # ventanee automáticamente el antes/después sin buscar el día del evento
+    # a mano (ver docs/experiments/, AgentCore.eden_event tiene el detalle).
+    nomos_active: bool = True
 
 
 class EmergenceMetrics:
@@ -101,6 +109,7 @@ class EmergenceMetrics:
         tribe_manager:    "TribeManager",
         collective_field: "CollectiveField",
         culture_engine:   "CultureEngine | None" = None,
+        nomos:            "Nomos | None" = None,
     ) -> DayMetrics:
         alive  = {aid: a for aid, a in agents.items() if a.is_alive}
         tribes = tribe_manager.tribes
@@ -152,6 +161,7 @@ class EmergenceMetrics:
             n_tribes_multi=n_tribes_multi,
             behavioral_kl_multi_mean=behavioral_kl_multi_mean,
             reorganizations_total=reorganizations_total,
+            nomos_active=nomos.enabled if nomos is not None else True,
         )
 
     # ── Distribuciones ────────────────────────────────────────────────────────

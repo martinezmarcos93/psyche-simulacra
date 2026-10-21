@@ -140,7 +140,40 @@ esta razón arquitectónica).
 
 ---
 
-## 6. Checklist para auditar código nuevo contra este documento
+## 6. Experimento EDEN — `Nomos` y `Serpiente`
+
+| Capa | Qué es | Dónde |
+|---|---|---|
+| A | Catálogo `VOCACIONES` (4 roles fijos, cada uno un dict de sesgo de acción); multiplicadores providenciales (`_PROVIDENCE_*`); `_PROB_EN_ARMONIA=0.5`; umbrales de elegibilidad de la Serpiente (`_REBELDE_MIN`, `_TRICKSTER_MIN`, `_PERSONA_MAX`, `_INDIVIDUACION_MIN`); dinámica de tentación (`_TENTACION_INCREMENTO/DECAY/UMBRAL`, `_TENTACION_BIAS`) | `nomos.py`, `serpent.py` |
+| B | `Nomos._vocacion_en_armonia`/`_vocacion_en_tension` (afinidad = producto punto del sesgo de la vocación contra el sesgo arquetípico nativo del agente, vía `ArchetypeVector.action_bias` — la misma función que ya usa `collapse_state`); `Serpiente.visitar` (contacto probabilístico diario); el peso de ambos canales en `collapse_state` (`_WEIGHT_NOMOS`, `_WEIGHT_SERPENT`, mismo mecanismo que `_WEIGHT_INTERPRETIVE`) | `nomos.py`, `serpent.py`, `collapse.py` |
+| C | Quién queda en armonía vs. en tensión por agente (`Nomos._en_armonia`, decidido por el RNG propio de `Nomos` en el momento real de la asignación); el nivel de tentación acumulado por agente (`Serpiente._tentacion`, resultado de cuántas veces lo visitó Y de que fuera elegible); cuál agente, si alguno, cruza el umbral primero | runtime |
+| D | **El acto de desafío y el switch que dispara**: `AgentCore.on_tick` no decide la rebelión — observa que el colapso cuántico nativo de un agente YA tentado resolvió a `competencia`/`aislamiento`/`manipulacion` en vez de `cooperacion`, y SOLO entonces llama `Nomos.disable()`. La resolución de `collapse_state` sigue siendo la única fuente de la acción final; `nomos_influence`/`serpent_influence` son dos sesgos más entre seis (arquetipo/complejo/rasgo/contexto/campo/interpretativo/nomos/serpiente), nunca un `if` que asigne la acción. Qué agente, en qué día exacto, con qué vocación y bajo qué grado de armonía/tensión — todo eso es Capa D genuina: depende de la historia estocástica real de la corrida (seeds de `Nomos`/`Serpiente`, quién fue visitado, cómo resolvió cada colapso previo) | `agent_core.py::_trigger_eden_switch` |
+| E | (pendiente — el `eden_event` persistido en `data/metrics/eden_event.json` es un registro estructurado, no todavía una narrativa en lenguaje natural; podría alimentar un prompt de `NarratorEngine` tipo "profecía cumplida" o "caída", no implementado) | — |
+
+**Veredicto**: legítimamente emergente, con una diferencia de diseño respecto a
+`InterpretiveFilter`/`MentalVault` que vale explicitar: acá la Capa A SÍ
+incluye una intención teológica declarada (Nomos es "bueno" por diseño — sus 4
+vocaciones solo favorecen cooperación, nunca manipulación/aislamiento; eso es
+un axioma del experimento, no un hallazgo, igual que los 12 arquetipos
+jungianos son axioma y no hallazgo en el resto del proyecto). Lo que no está
+fijado a mano es exactamente lo que el experimento necesita que sea libre: si
+alguien es elegible, si está en armonía o en tensión, cuándo (si acaso) la
+Serpiente lo encuentra, y si su psique —no un enum— decide romper el patrón.
+Pasa el mismo test que `InterpretiveFilter` pasó en 2026-09-21 (ver
+`docs/experiments/2026-09-21-fase1-ecuacion-personal.md`, sección "test
+filosófico"): no hay ningún punto del código donde `if agente.rebelde > X:
+agente.accion = "competencia"`. Ver `tests/test_eden_integration.py` para la
+verificación end-to-end de que el circuito completo (vocación → tentación →
+colapso nativo → switch) corre sin atajos.
+
+**Riesgo conocido, no oculto**: `VOCACIONES` tiene solo 4 entradas, todas
+pro-cooperación en magnitud distinta — ninguna vocación "mala" existe en el
+catálogo. Esto es intencional (Nomos representa un orden que, mientras dura,
+es benigno por definición del experimento — ver `docs/experiments/
+2026-10-20-eden-libre-albedrio.md`), pero vale tenerlo presente si en algún
+momento se quisiera generalizar `Nomos` fuera de este experimento específico.
+
+## 7. Checklist para auditar código nuevo contra este documento
 
 Antes de mergear cualquier cambio a `core/agents/psyche/`, `core/social/`, o
 `core/agents/mental_vault/`, preguntar:

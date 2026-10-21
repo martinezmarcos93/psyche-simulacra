@@ -1,0 +1,276 @@
+meta:
+  version: '2.0'
+  seed: 42
+  n_agentes: 10
+  descripcion: Grupo de 10 agentes con diversidad arquetipica amplia — generado proceduralmente
+agents:
+- id: barea
+  nombre: Barea
+  edad: 40
+  sexo: F
+  rol: generico
+  posicion:
+  - 27
+  - 34
+  arquetipos:
+    self_: 0.654
+    persona: 0.469
+    sombra: 0.311
+    anima_animus: 0.48
+    heroe: 0.182
+    sabio: 0.841
+    trickster: 0.39
+    madre: 0.216
+    padre: 0.311
+    nino_divino: 0.304
+    gobernante: 0.308
+    rebelde: 0.291
+  big_five:
+    apertura: 0.85
+    responsabilidad: 0.763
+    extraversion: 0.401
+    amabilidad: 0.739
+    neuroticismo: 0.169
+- id: medon
+  nombre: Medon
+  edad: 49
+  sexo: M
+  rol: generico
+  posicion:
+  - 40
+  - 28
+  arquetipos:
+    self_: 0.747
+    persona: 0.389
+    sombra: 0.153
+    anima_animus: 0.444
+    heroe: 0.177
+    sabio: 0.827
+    trickster: 0.295
+    madre: 0.287
+    padre: 0.186
+    nino_divino: 0.337
+    gobernante: 0.216
+    rebelde: 0.227
+  big_five:
+    apertura: 0.921
+    responsabilidad: 0.639
+    extraversion: 0.453
+    amabilidad: 0.685
+    neuroticismo: 0.41
+- id: lysane
+  nombre: Lysane
+  edad: 47
+  sexo: F
+  rol: recolector
+  posicion:
+  - 26
+  - 39
+  arquetipos:
+    self_: 0.501
+    persona: 0.361
+    sombra: 0.459
+    anima_animus: 0.534
+    heroe: 0.316
+    sabio: 0.311
+    trickster: 0.309
+    madre: 0.429
+    padre: 0.354
+    nino_divino: 0.443
+    gobernante: 0.474
+    rebelde: 0.335
+  big_five:
+    apertura: 0.514
+    responsabilidad: 0.539
+    extraversion: 0.368
+    amabilidad: 0.611
+    neuroticismo: 0.437
+- id: ivar
+  nombre: Ivar
+  edad: 31
+  sexo: M
+  rol: recolector
+  posicion:
+  - 27
+  - 18
+  arquetipos:
+    self_: 0.24
+    persona: 0.185
+    sombra: 0.228
+    anima_animus: 0.415
+    heroe: 0.884
+    sabio: 0.435
+    trickster: 0.341
+    madre: 0.301
+    padre: 0.56
+    nino_divino: 0.337
+    gobernante: 0.643
+    rebelde: 0.19
+  big_five:
+    apertura: 0.715
+    responsabilidad: 0.765
+    extraversion: 0.65
+    amabilidad: 0.526
+    neuroticismo: 0.364
+- id: peria
+  nombre: Peria
+  edad: 8
+  sexo: F
+  rol: generico
+  posicion:
+  - 54
+  - 29
+  arquetipos:
+    self_: 0.495
+    persona: 0.207
+    sombra: 0.217
+    anima_animus: 0.483
+    heroe: 0.413
+    sabio: 0.389
+    trickster: 0.26
+    madre: 0.475
+    padre: 0.401
+    nino_divino: 0.796
+    gobernante: 0.383
+    rebelde: 0.414
+  big_five:
+    apertura: 0.754
+    responsabilidad: 0.316
+    extraversion: 0.663
+    amabilidad: 0.798
+    neuroticismo: 0.32
+- id: selene
+  nombre: Selene
+  edad: 45
+  sexo: F
+  rol: recolector
+  posicion:
+  - 34
+  - 23
+  arquetipos:
+    self_: 0.363
+    persona: 0.671
+    sombra: 0.445
+    anima_animus: 0.382
+    heroe: 0.576
+    sabio: 0.21
+    trickster: 0.37
+    madre: 0.274
+    padre: 0.584
+    nino_divino: 0.211
+    gobernante: 0.981
+    rebelde: 0.156
+  big_five:
+    apertura: 0.522
+    responsabilidad: 0.909
+    extraversion: 0.82
+    amabilidad: 0.382
+    neuroticismo: 0.262
+- id: brennus
+  nombre: Brennus
+  edad: 48
+  sexo: M
+  rol: recolector
+  posicion:
+  - 36
+  - 18
+  arquetipos:
+    self_: 0.181
+    persona: 0.412
+    sombra: 0.335
+    anima_animus: 0.198
+    heroe: 0.896
+    sabio: 0.369
+    trickster: 0.179
+    madre: 0.267
+    padre: 0.443
+    nino_divino: 0.314
+    gobernante: 0.498
+    rebelde: 0.288
+  big_five:
+    apertura: 0.581
+    responsabilidad: 0.811
+    extraversion: 0.717
+    amabilidad: 0.66
+    neuroticismo: 0.46
+- id: kleis
+  nombre: Kleis
+  edad: 26
+  sexo: F
+  rol: cazador
+  posicion:
+  - 37
+  - 31
+  arquetipos:
+    self_: 0.299
+    persona: 0.459
+    sombra: 0.369
+    anima_animus: 0.365
+    heroe: 0.509
+    sabio: 0.474
+    trickster: 0.361
+    madre: 0.364
+    padre: 0.39
+    nino_divino: 0.389
+    gobernante: 0.36
+    rebelde: 0.314
+  big_five:
+    apertura: 0.552
+    responsabilidad: 0.434
+    extraversion: 0.6
+    amabilidad: 0.533
+    neuroticismo: 0.284
+- id: decia
+  nombre: Decia
+  edad: 33
+  sexo: F
+  rol: recolector
+  posicion:
+  - 38
+  - 35
+  arquetipos:
+    self_: 0.375
+    persona: 0.266
+    sombra: 0.889
+    anima_animus: 0.362
+    heroe: 0.139
+    sabio: 0.269
+    trickster: 0.467
+    madre: 0.332
+    padre: 0.288
+    nino_divino: 0.364
+    gobernante: 0.409
+    rebelde: 0.412
+  big_five:
+    apertura: 0.318
+    responsabilidad: 0.278
+    extraversion: 0.481
+    amabilidad: 0.177
+    neuroticismo: 0.759
+- id: meroe
+  nombre: Meroe
+  edad: 29
+  sexo: F
+  rol: guardian
+  posicion:
+  - 47
+  - 27
+  arquetipos:
+    self_: 0.341
+    persona: 0.334
+    sombra: 0.287
+    anima_animus: 0.346
+    heroe: 0.408
+    sabio: 0.509
+    trickster: 0.3
+    madre: 0.392
+    padre: 0.45
+    nino_divino: 0.332
+    gobernante: 0.468
+    rebelde: 0.413
+  big_five:
+    apertura: 0.554
+    responsabilidad: 0.682
+    extraversion: 0.637
+    amabilidad: 0.604
+    neuroticismo: 0.424

@@ -31,6 +31,7 @@ data/db/*.db-wal
 data/checkpoints/
 data/exports/
 data/sessions/
+data/experiments/
 
 # Archivos de simulaciones archivadas (pueden ser >100 MB)
 data/archive/**/simulation.db
