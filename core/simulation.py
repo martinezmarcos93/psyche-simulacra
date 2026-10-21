@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import atexit
+import json
 import os
 import sys
 from pathlib import Path
@@ -11,6 +12,7 @@ from core.world import WorldCore
 from core.agents import AgentCore
 from core.narrative.narrator import NarratorEngine
 from core.metrics import EmergenceMetrics, MetricsExporter
+from core.metrics.exporter import _DEFAULT_DIR as _METRICS_DIR
 from persistence import DatabaseManager, WriteBuffer, CheckpointManager, SessionLog
 from obsidian.sync import ObsidianSync
 
@@ -63,6 +65,10 @@ class SimulationRunner:
         self._event_bus: EventBus | None = None
         # Prehistoria silenciosa: suprime BD, narrativa y Obsidian
         self._in_prehistory: bool = False
+
+        # Experimento EDEN: evita reescribir data/metrics/eden_event.json en
+        # cada día posterior al switch (el evento no cambia una vez ocurrido).
+        self._eden_event_persisted: bool = False
 
         # NO se llama _wire_handlers() aquí — se llama desde los constructores de clase
 
@@ -163,10 +169,18 @@ class SimulationRunner:
             tribe_manager=self.agents.tribe_manager,
             collective_field=self.agents.collective_field,
             culture_engine=self.agents.culture_engine,
+            nomos=self.agents.nomos,
         )
         self.metrics_exporter.record(day_m)
         if dia % 10 == 0:
             self.metrics_exporter.flush()
+
+        # Experimento EDEN: persistir el evento del switch una sola vez, el
+        # día que ocurre (AgentCore.eden_event no cambia después — ver
+        # Nomos.disable()/_trigger_eden_switch).
+        if self.agents.eden_event is not None and not self._eden_event_persisted:
+            self._persist_eden_event(self.agents.eden_event)
+            self._eden_event_persisted = True
 
         # Sincronizar con el vault de Obsidian (Fase 8)
         if not self._in_prehistory:
@@ -196,6 +210,14 @@ class SimulationRunner:
             self._save_checkpoint(reason=f"auto_dia_{dia}")
         elif len(self.buffer) >= 200:
             self.buffer.flush()
+
+    def _persist_eden_event(self, eden_event: dict) -> None:
+        """Escribe data/metrics/eden_event.json con el acto de desafío que
+        disparó el switch — una sola vez (ver _persist_day)."""
+        out_dir = Path(_METRICS_DIR)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        with open(out_dir / "eden_event.json", "w", encoding="utf-8") as f:
+            json.dump(eden_event, f, indent=2, ensure_ascii=False)
 
     def _emit_narrative(self, tipo: str, dia: int, tribe_id: str | None, data: dict) -> None:
         """Emite evento narrativo: por el bus si está disponible, directo al narrator si no."""

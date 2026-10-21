@@ -15,6 +15,15 @@ _DB_PATH = _ROOT / "data" / "db" / "simulation.db"
 _CP_DIR  = _ROOT / "data" / "checkpoints"
 
 
+def configurar(data_dir: Path) -> None:
+    """Apunta las lecturas a la carpeta `data/` de una corrida (default: la del repo)."""
+    global _DB_PATH, _CP_DIR, _EMERGENCE_CSV
+    data_dir = Path(data_dir).resolve()
+    _DB_PATH = data_dir / "db" / "simulation.db"
+    _CP_DIR = data_dir / "checkpoints"
+    _EMERGENCE_CSV = data_dir / "metrics" / "emergence_series.csv"
+
+
 # ── Checkpoint JSON ───────────────────────────────────────────────────────────
 
 def load_checkpoint() -> dict | None:

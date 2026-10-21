@@ -211,6 +211,25 @@ def generate(n: int = 100, seed: int = 42) -> list[dict]:
     return agents
 
 
+def escribir_poblacion(n: int, seed: int, out: Path) -> list[dict]:
+    """Genera n agentes y los escribe como YAML de semillas en `out`."""
+    agents = generate(n=n, seed=seed)
+    data = {
+        "meta": {
+            "version":    "2.0",
+            "seed":       seed,
+            "n_agentes":  len(agents),
+            "descripcion": f"Grupo de {len(agents)} agentes con diversidad arquetipica amplia — generado proceduralmente",
+        },
+        "agents": agents,
+    }
+    out.parent.mkdir(parents=True, exist_ok=True)
+    with open(out, "w", encoding="utf-8") as f:
+        yaml.dump(data, f, allow_unicode=True, default_flow_style=False,
+                  sort_keys=False, width=120)
+    return agents
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Genera agentes para PSYCHE SIMULACRA")
     parser.add_argument("--n",      type=int, default=100,  help="Numero de agentes")
@@ -218,23 +237,8 @@ def main() -> None:
     parser.add_argument("--output", default="data/seeds/100_personas.yaml", help="Archivo de salida")
     args = parser.parse_args()
 
-    agents = generate(n=args.n, seed=args.seed)
-
-    data = {
-        "meta": {
-            "version":    "2.0",
-            "seed":       args.seed,
-            "n_agentes":  len(agents),
-            "descripcion": f"Grupo de {len(agents)} agentes con diversidad arquetipica amplia — generado proceduralmente",
-        },
-        "agents": agents,
-    }
-
     out = ROOT / args.output
-    out.parent.mkdir(parents=True, exist_ok=True)
-    with open(out, "w", encoding="utf-8") as f:
-        yaml.dump(data, f, allow_unicode=True, default_flow_style=False,
-                  sort_keys=False, width=120)
+    agents = escribir_poblacion(n=args.n, seed=args.seed, out=out)
 
     vivos_count = len(agents)
     print(f"Generados {vivos_count} agentes en {out}")

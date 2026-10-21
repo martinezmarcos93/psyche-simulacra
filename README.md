@@ -184,8 +184,10 @@ psyche-simulacra/
 │   ├── __init__.py
 │   ├── app_state.py               AppState — singleton thread-safe (runner + runtime)
 │   ├── db_reader.py               Lecturas no bloqueantes de DB SQLite y checkpoint JSON
-│   ├── launch.py                  Punto de entrada alternativo para NiceGUI
-│   └── psyche_ui.py               Interfaz NiceGUI completa (launcher / 9 tabs monitor)
+│   ├── hub.py                     Panel de corridas (tandas, cola, tabla, comparar, guía)
+│   ├── corrida_worker.py          Proceso de UNA corrida: simula + sirve su monitor (o visor)
+│   ├── launch.py                  Atajo al panel (= python main.py)
+│   └── psyche_ui.py               Monitor NiceGUI de una corrida (9 tabs)
 │
 ├── core/
 │   ├── time/
@@ -274,7 +276,7 @@ psyche-simulacra/
 │   ├── plot_emergence.py             Reporte PNG con 6 graficas (KL, MIG, IMI, VFE, scatter, supervivencia)
 │   └── visualizer.py                 Visualizador Pygame en tiempo real
 │
-├── tests/                            434 tests (pytest)
+├── tests/                            560 tests (pytest)
 │   ├── test_agent.py
 │   ├── test_network.py
 │   ├── test_quantum.py
@@ -327,15 +329,34 @@ pip install -e ".[dashboard]"    # con Streamlit
 
 ## Ejecucion
 
-### Observatorio NiceGUI (recomendado)
+### Panel de corridas (recomendado)
 
 ```bash
 python main.py
 ```
 
-Inicia Ollama en background y abre automáticamente `http://localhost:8080` en el browser.
-Desde ahí se elige **Continuar** la simulacion activa o iniciar una **Nueva** (con seleccion de semillas y seed).
-Una vez iniciada, el observatorio muestra 9 tabs en tiempo real:
+Abre `http://127.0.0.1:8080` en el navegador. Desde el panel se arman **tandas
+de corridas**: uno o más escenarios × N réplicas (semillas consecutivas), con
+todos los mecanismos, la natalidad y los ajustes finos del motor configurables.
+Cada corrida es un **proceso propio con su carpeta** (`data/corridas/<fecha>_<escenario>_s<semilla>_…/`:
+`config.json`, `estado.json`, BD, checkpoints, métricas y vault), así que varias
+corren en paralelo sin pisarse y una nueva nunca borra las anteriores.
+
+| Escenario | `EDEN_MODE` | Qué es |
+|---|---|---|
+| Mundo libre | `off` | Sin Nomos ni Serpiente (comportamiento histórico del motor) |
+| Orden permanente | `orden` | Nomos activo todo el run, sin Serpiente (control del experimento EDEN) |
+| Edén | `eden` | Nomos + Serpiente: el orden puede romperse (tratamiento) |
+
+En la tabla de corridas: **Ver en vivo** abre el monitor completo de la corrida
+elegida (las demás siguen por detrás), **Estado final** abre el monitor congelado
+de una corrida terminada (sin modificar su carpeta), y se puede detener, reanudar,
+abrir la carpeta o borrar. **Comparar** superpone población y tribus de las
+corridas marcadas. La guía para quien no conoce el código está en
+[`docs/GUIA_DE_USO.md`](docs/GUIA_DE_USO.md) (también en el panel, enlace *Guía de uso*).
+Arquitectura y motivos: [`docs/decisions/ADR-001-panel-multicorrida.md`](docs/decisions/ADR-001-panel-multicorrida.md).
+
+El monitor de cada corrida tiene 9 tabs:
 
 | Tab | Contenido |
 |-----|-----------|
@@ -370,11 +391,13 @@ python scripts/visualizer.py --resume --fps 10 --days 0
 
 ### Zona Liminal (multijugador experimental)
 
-Desde el launcher NiceGUI, marcar **"Levantar servidor Zona Liminal"** antes de iniciar.
-El servidor corre en background y el tab **Liminal** aparece en el observatorio, mostrando el mapa del espacio liminal y los agentes en tránsito.
+En el panel, *Avanzado → Zona Liminal* antes de lanzar. Si el servidor es
+`localhost`, el panel lo levanta solo; el tab **Zona Liminal** aparece en el
+monitor de cada corrida conectada. Dos o más corridas conectadas al mismo
+servidor intercambian personas.
 
 **Flujo típico en la misma PC (desarrollo/pruebas):**
-1. `python main.py` → activar checkbox Zona Liminal → Continuar/Nueva → tab Liminal
+1. `python main.py` → *Avanzado* → activar Zona Liminal → lanzar dos o más corridas → *Ver en vivo* → tab Zona Liminal
 
 **Flujo entre dos PCs:** el servidor liminal puede iniciarse manualmente en el host:
 ```bash
@@ -413,7 +436,7 @@ python scripts/run_robustness.py --runs 10 --days 200
 ## Tests
 
 ```bash
-python -m pytest                        # 434 tests
+python -m pytest                        # 560 tests (~32 min)
 python -m pytest -v                     # verbose
 python -m pytest --tb=short             # traceback corto
 python -m pytest tests/test_metrics.py -v   # solo metricas de emergencia
@@ -446,7 +469,7 @@ MYTH_TRANSMISSION_CONFLICTO_EXPLOTACION=0.50 # intensidad de transmisión — co
 MYTH_TRANSMISSION_COOPERACION_PURA=0.25      # intensidad de transmisión — cooperación pura
 ```
 
-Todas las variables configurables también desde el launcher NiceGUI (sección **Configuración avanzada**) sin necesidad de editar archivos.
+Todas estas variables (y `EDEN_MODE`, `NOMOS_WEIGHT`, `SERPENT_WEIGHT`) se configuran por corrida desde el panel (`python main.py`), sin editar archivos: cada corrida guarda en su `config.json` exactamente lo que usó.
 
 ---
 
@@ -463,7 +486,7 @@ Todas las variables configurables también desde el launcher NiceGUI (sección *
 | Visualizador alternativo | Pygame (`scripts/visualizer.py`) |
 | Narrativa LLM | Ollama (llama3.2, cliente stdlib sin deps externas) |
 | Zona Liminal (red) | websockets + asyncio (servidor headless) / threading (cliente) |
-| Tests | pytest (434 tests) |
+| Tests | pytest (560 tests) |
 
 ---
 

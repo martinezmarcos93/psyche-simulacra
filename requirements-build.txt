@@ -1,0 +1,2 @@
+# Solo para construir el ejecutable de Windows (ver packaging/README.md)
+pyinstaller>=6.10

@@ -74,6 +74,14 @@ class WorldCore:
         # Producir snapshot para que AgentCore lo lea
         self._current_snapshot = self._produce_snapshot(tp, climate_state)
 
+    def refresh_snapshot(self, tp: TimePoint) -> None:
+        """Recalcula el snapshot con el estado actual SIN avanzar el mundo.
+
+        Lo usa el visor de estado final (corrida reanudada desde checkpoint pero
+        sin correr el reloj): resume() deja el snapshot vacío hasta el primer tick.
+        """
+        self._current_snapshot = self._produce_snapshot(tp, self._last_climate_state())
+
     def on_day(self, tp: TimePoint) -> None:
         """Llamado al inicio de cada nuevo día simulado."""
         explored = self.terrain.explored_coords()
