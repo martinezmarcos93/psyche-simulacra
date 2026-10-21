@@ -276,7 +276,7 @@ psyche-simulacra/
 │   ├── plot_emergence.py             Reporte PNG con 6 graficas (KL, MIG, IMI, VFE, scatter, supervivencia)
 │   └── visualizer.py                 Visualizador Pygame en tiempo real
 │
-├── tests/                            434 tests (pytest)
+├── tests/                            560 tests (pytest)
 │   ├── test_agent.py
 │   ├── test_network.py
 │   ├── test_quantum.py
@@ -436,7 +436,7 @@ python scripts/run_robustness.py --runs 10 --days 200
 ## Tests
 
 ```bash
-python -m pytest                        # 434 tests
+python -m pytest                        # 560 tests (~32 min)
 python -m pytest -v                     # verbose
 python -m pytest --tb=short             # traceback corto
 python -m pytest tests/test_metrics.py -v   # solo metricas de emergencia
@@ -486,7 +486,7 @@ Todas estas variables (y `EDEN_MODE`, `NOMOS_WEIGHT`, `SERPENT_WEIGHT`) se confi
 | Visualizador alternativo | Pygame (`scripts/visualizer.py`) |
 | Narrativa LLM | Ollama (llama3.2, cliente stdlib sin deps externas) |
 | Zona Liminal (red) | websockets + asyncio (servidor headless) / threading (cliente) |
-| Tests | pytest (434 tests) |
+| Tests | pytest (560 tests) |
 
 ---
 
