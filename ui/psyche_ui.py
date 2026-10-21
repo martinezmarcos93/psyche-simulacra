@@ -12,7 +12,6 @@ Doctrinas:
 from __future__ import annotations
 
 import math
-import subprocess
 import sys
 import threading
 import traceback
@@ -1914,251 +1913,49 @@ def _tension_bar(label: str, value: float, color_fn=None):
     return val, bar_ref
 
 
-# ── Página de lanzamiento ─────────────────────────────────────────────────────
+# ── Zona Liminal ─────────────────────────────────────────────────────────────
 
-def build_launcher_page(app_state, DB_PATH, CP_DIR, SEEDS_DIR, LIMINAL_SERVER) -> None:
-    import os
-    from nicegui import ui
-    from ui.db_reader import load_checkpoint, checkpoint_summary
+def conectar_liminal(runner, app_state, host: str, port: int, seed: int) -> bool:
+    """Conecta la corrida a la Zona Liminal (servidor ya levantado por el panel).
 
-    cp   = load_checkpoint()
-    summ = checkpoint_summary(cp)
-
-    with ui.column().classes("w-full min-h-screen bg-gray-950 items-center justify-center p-8"):
-        ui.label("PSYCHE SIMULACRA").classes(
-            "text-4xl font-bold text-purple-300 tracking-widest mb-2"
-        )
-        ui.label("Simulación ABM de inconsciente colectivo").classes(
-            "text-sm text-gray-500 mb-10"
-        )
-
-        # ── Panel estado actual ───────────────────────────────────────────────
-        with ui.card().classes("w-full max-w-xl bg-gray-800 mb-8"):
-            if summ["dia"] > 0:
-                ui.label("Estado actual").classes("text-xs text-gray-400 uppercase px-4 pt-4")
-                with ui.row().classes("px-4 pb-4 gap-8"):
-                    with ui.column().classes("items-center"):
-                        ui.label(str(summ["dia"])).classes("text-3xl font-bold text-purple-300")
-                        ui.label("Día simulado").classes("text-xs text-gray-400")
-                    with ui.column().classes("items-center"):
-                        ui.label(f"{summ['vivos']} / {summ['total']}").classes(
-                            "text-3xl font-bold text-green-400"
-                        )
-                        ui.label("Agentes vivos").classes("text-xs text-gray-400")
-                    with ui.column().classes("items-center"):
-                        ui.label(summ["timestamp"] or "—").classes("text-sm text-gray-400")
-                        ui.label("Último checkpoint").classes("text-xs text-gray-400")
-            else:
-                ui.label("Sin simulación activa").classes("p-4 text-yellow-400")
-
-        # ── Opciones de inicio ────────────────────────────────────────────────
-        with ui.card().classes("w-full max-w-xl bg-gray-800 p-6"):
-            ui.label("Iniciar").classes("text-sm text-gray-400 uppercase mb-4")
-
-            seeds_files = sorted(Path(SEEDS_DIR).glob("*.yaml")) if Path(SEEDS_DIR).exists() else []
-
-            seed_select = ui.select(
-                {str(f): f.name for f in seeds_files},
-                value=str(seeds_files[0]) if seeds_files else None,
-                label="Archivo de semillas (nueva sim)",
-            ).classes("w-full mb-2")
-
-            seed_input = ui.number("Seed aleatoria", value=42, min=0).classes("w-full mb-4")
-            use_liminal = ui.checkbox("Zona Liminal", value=False).classes("mb-1")
-            with ui.row().classes("gap-2 w-full mb-1").bind_visibility_from(use_liminal, "value"):
-                liminal_host_input = ui.input(
-                    "Host del servidor",
-                    value=os.environ.get("LIMINAL_HOST", "localhost"),
-                    placeholder="localhost o IP remota",
-                ).classes("flex-1 text-sm")
-                liminal_port_input = ui.number(
-                    "Puerto",
-                    value=app_state.liminal_port,
-                    min=1024, max=65534,
-                ).classes("w-28 text-sm")
-            ui.label(
-                "Dejá 'localhost' para levantar el servidor en esta PC. "
-                "Ingresá la IP del host para conectarte a un servidor remoto (no lanza proceso local)."
-            ).classes("text-xs text-gray-500 mb-3").bind_visibility_from(use_liminal, "value")
-
-            # H3 — Configuración avanzada
-            with ui.expansion("Configuración avanzada", icon="settings").classes(
-                "w-full mb-4 text-gray-300"
-            ):
-                with ui.grid(columns=2).classes("w-full gap-3"):
-                    cfg_narrative = ui.select(
-                        {True: "Activada", False: "Desactivada"},
-                        value=os.environ.get("NARRATIVE_ENABLED", "true").lower() != "false",
-                        label="Narrativa (NARRATIVE_ENABLED)",
-                    ).classes("w-full")
-                    cfg_model = ui.input(
-                        label="Modelo Ollama (OLLAMA_MODEL)",
-                        value=os.environ.get("OLLAMA_MODEL", "llama3.2"),
-                        placeholder="llama3.2",
-                    ).classes("w-full")
-                    cfg_cp_interval = ui.number(
-                        label="Días entre checkpoints",
-                        value=int(os.environ.get("CHECKPOINT_INTERVAL", "10")),
-                        min=1, max=500,
-                    ).classes("w-full")
-                    cfg_clustering = ui.number(
-                        label="Días hasta clustering",
-                        value=int(os.environ.get("DAYS_UNTIL_CLUSTERING", "30")),
-                        min=1, max=9999,
-                    ).classes("w-full")
-                ui.label(
-                    "Los cambios se aplican al iniciar la simulación (no requieren reiniciar el servidor)."
-                ).classes("text-xs text-gray-500 mt-1")
-
-            def _apply_config() -> None:
-                os.environ["NARRATIVE_ENABLED"]    = str(cfg_narrative.value).lower()
-                os.environ["OLLAMA_MODEL"]          = str(cfg_model.value).strip() or "llama3.2"
-                os.environ["CHECKPOINT_INTERVAL"]  = str(int(cfg_cp_interval.value or 10))
-                os.environ["DAYS_UNTIL_CLUSTERING"] = str(int(cfg_clustering.value or 30))
-                if use_liminal.value:
-                    app_state.liminal_host = (liminal_host_input.value or "localhost").strip()
-                    app_state.liminal_port = int(liminal_port_input.value or 8765)
-
-            with ui.row().classes("gap-4 w-full"):
-                if summ["vivos"] > 0:
-                    async def _continue():
-                        _apply_config()
-                        await _start_sim(app_state, mode="resume",
-                                         use_liminal=use_liminal.value,
-                                         liminal_server=LIMINAL_SERVER)
-                    ui.button("Continuar simulación", on_click=_continue).classes(
-                        "flex-1 bg-purple-700 hover:bg-purple-600 text-white"
-                    )
-
-                async def _new():
-                    _apply_config()
-                    await _start_sim(app_state, mode="new",
-                                     seeds_path=seed_select.value,
-                                     seed=int(seed_input.value or 42),
-                                     use_liminal=use_liminal.value,
-                                     liminal_server=LIMINAL_SERVER)
-                ui.button("Nueva simulación", on_click=_new).classes(
-                    "flex-1 bg-indigo-700 hover:bg-indigo-600 text-white"
-                )
-
-
-# TODO(duplicidad): lógica análoga en scripts/run_simulation.py y scripts/visualizer.py.
-# Extraer a core/runtime/runner_factory.py para unificar los tres entry points.
-async def _start_sim(app_state, mode: str, seeds_path: str = None,
-                     seed: int = 42, use_liminal: bool = False,
-                     liminal_server: Path = None) -> None:
-    from nicegui import ui
-    from core.simulation import SimulationRunner
-    from core.runtime.psyche_runtime import PsycheRuntime
-
-    DB_PATH = ROOT / "data" / "db" / "simulation.db"
-    CP_DIR  = ROOT / "data" / "checkpoints"
-
+    Devuelve True si quedó conectada. Un fallo no detiene la simulación: se
+    loguea y la corrida sigue sin portal.
+    """
     try:
-        if mode == "resume":
-            runner = SimulationRunner.resume(
-                db_path=str(DB_PATH),
-                checkpoint_dir=str(CP_DIR),
-            )
-        else:
-            runner = SimulationRunner.new_session(
-                seed_file=seeds_path,
-                seed=seed,
-                db_path=str(DB_PATH),
-                checkpoint_dir=str(CP_DIR),
-            )
+        from core.liminal.sim_identity import get_sim_id
+        from core.liminal.portal_hex import PortalHex
+        from core.liminal.liminal_client import LiminalClient
+        from core.liminal.agent_transfer import AgentTransferHandler
+
+        portal = PortalHex(seed=seed)
+        client = LiminalClient(sim_id=get_sim_id(), seed=seed)
+        client.start(host=host, port=port)
+        transfer = AgentTransferHandler(agent_core=runner.agents, portal=portal, client=client)
+        runner.clock.on_tick(transfer.on_tick, priority=25)
+        runner.clock.on_day(transfer.on_day, priority=25)
+        app_state.use_liminal = True
+        app_state.liminal_host = host
+        app_state.liminal_port = port
+        app_state.liminal_portal = portal
+        app_state.liminal_transfer = transfer
+        return True
     except Exception as e:
-        ui.notify(f"Error iniciando simulación: {e}", type="negative")
-        return
-
-    runtime = PsycheRuntime()
-    runtime.attach_runner(runner)
-    runtime.state.simulation = "running"
-
-    app_state.set_runner(runner, runtime)
-    app_state.use_liminal = use_liminal
-
-    if use_liminal:
-        try:
-            _lim_host   = app_state.liminal_host
-            _lim_port   = app_state.liminal_port
-            _is_local   = _lim_host in ("localhost", "127.0.0.1")
-
-            # Solo lanzar proceso local si el host apunta a esta máquina
-            if _is_local and liminal_server and liminal_server.exists():
-                if sys.platform == "win32":
-                    proc = subprocess.Popen(
-                        [sys.executable, str(liminal_server), "--host", "0.0.0.0",
-                         "--port", str(_lim_port), "--seed", "0"],
-                        creationflags=subprocess.CREATE_NEW_CONSOLE,
-                    )
-                else:
-                    proc = subprocess.Popen(
-                        [sys.executable, str(liminal_server), "--host", "0.0.0.0",
-                         "--port", str(_lim_port), "--seed", "0"],
-                        start_new_session=True,
-                    )
-                app_state._liminal_proc = proc
-                runtime.state.liminal = "starting"
-
-                import time as _time
-                _time.sleep(0.5)  # dar tiempo al servidor a iniciar el socket
-            else:
-                runtime.state.liminal = "connecting"
-
-            from core.liminal.sim_identity import get_sim_id
-            from core.liminal.portal_hex import PortalHex
-            from core.liminal.liminal_client import LiminalClient
-            from core.liminal.agent_transfer import AgentTransferHandler
-
-            _sim_id = get_sim_id()
-            _portal = PortalHex(seed=seed)
-            _client = LiminalClient(sim_id=_sim_id, seed=seed)
-            _client.start(host=_lim_host, port=_lim_port)
-
-            _liminal_transfer = AgentTransferHandler(
-                agent_core=runner.agents,
-                portal=_portal,
-                client=_client,
-            )
-            runner.clock.on_tick(_liminal_transfer.on_tick, priority=25)
-            runner.clock.on_day(_liminal_transfer.on_day,   priority=25)
-            app_state.liminal_portal   = _portal
-            app_state.liminal_transfer = _liminal_transfer
-            runtime.state.liminal = "connected"
-        except Exception as e:
-            print(f"[UI] liminal start: {e}", file=sys.stderr)
-
-    # Limpiar evento de pausa anterior y registrar gate en el reloj
-    app_state._pause_event.clear()
-
-    def _pause_gate(tp) -> None:
-        import time as _t
-        while app_state._pause_event.is_set():
-            _t.sleep(0.05)
-
-    runner.clock.on_day(_pause_gate, priority=98)  # justo antes del stopper (99)
-
-    def _run():
-        try:
-            runner.run(n_days=None)
-        except Exception as e:
-            import sys
-            print(f"[UI] sim thread: {e}", file=sys.stderr)
-        finally:
-            app_state._pause_event.clear()
-            runtime.state.simulation = "stopped"
-
-    t = threading.Thread(target=_run, daemon=True, name="sim_worker")
-    t.start()
-    app_state.sim_thread = t
-
-    ui.navigate.to("/monitor")
+        print(f"[UI] no se pudo conectar a la Zona Liminal {host}:{port}: {e}",
+              file=sys.stderr)
+        traceback.print_exc()
+        return False
 
 
 # ── Página de monitoreo ───────────────────────────────────────────────────────
 
-def build_monitor_page(app_state) -> None:
+def build_monitor_page(app_state, hub_url: str | None = None,
+                       titulo: str | None = None, on_detener=None) -> None:
+    """Monitor en vivo de UNA corrida.
+
+    hub_url    — dirección del panel de corridas (para volver).
+    titulo     — nombre de la corrida, se muestra en el encabezado.
+    on_detener — callback del botón "Detener corrida".
+    """
     from nicegui import ui
     from ui.db_reader import (
         load_checkpoint, load_agent_metrics,
@@ -2168,15 +1965,21 @@ def build_monitor_page(app_state) -> None:
 
     runner = app_state.get_runner()
     if runner is None:
-        ui.label("Sin simulación activa.").classes("p-8 text-yellow-400")
-        ui.button("Volver al inicio", on_click=lambda: ui.navigate.to("/")).classes("m-4")
+        ui.label("La simulación todavía se está preparando…").classes("p-8 text-yellow-400")
+        ui.timer(2.0, lambda: ui.navigate.reload() if app_state.get_runner() else None)
+        if hub_url:
+            ui.link("← Volver al panel de corridas", hub_url).classes("m-4 text-purple-300")
         return
 
     terrain_biomes = _extract_terrain(runner)
 
     # ── Header ────────────────────────────────────────────────────────────────
     with ui.header().classes("bg-purple-950 text-white px-6 py-2 flex items-center gap-6"):
+        if hub_url:
+            ui.link("← Panel", hub_url).classes("text-purple-200 text-sm no-underline")
         ui.label("PSYCHE SIMULACRA").classes("text-lg font-bold tracking-widest")
+        if titulo:
+            ui.label(titulo).classes("text-sm text-purple-200 italic")
         refs_hdr: dict = {}
         with ui.row().classes("gap-6 ml-4 flex-1 items-center"):
             refs_hdr["dia"]    = ui.label("Día —").classes("text-purple-200 text-sm")
@@ -2209,6 +2012,8 @@ def build_monitor_page(app_state) -> None:
                     pass
 
         speed_select.on("update:modelValue", lambda _: _on_speed_change())
+        # En el visor de estado final no hay reloj corriendo: velocidad/pausa no aplican
+        speed_select.set_visibility(on_detener is not None)
 
         # Botón Pausar / Reanudar
         def _toggle_pause() -> None:
@@ -2230,64 +2035,22 @@ def build_monitor_page(app_state) -> None:
         pause_btn = ui.button("⏸ Pausar", on_click=_toggle_pause).classes(
             "text-xs bg-purple-700 hover:bg-purple-600 text-white px-3 py-1 rounded"
         )
+        pause_btn.set_visibility(on_detener is not None)
 
-        # Botón Cerrar simulación
-        def _cerrar_simulacion() -> None:
-            """Cierra la simulación, mata ollama y termina el proceso propio."""
+        # Botón Detener corrida: pide la detención limpia (checkpoint incluido).
+        # El proceso de la corrida se encarga del resto; no mata nada externo.
+        def _detener() -> None:
+            if app_state.is_paused:
+                app_state._pause_event.clear()
+            if on_detener is not None:
+                on_detener()
+            ui.notify("Deteniendo la corrida: se guarda al terminar el día en curso.",
+                      type="warning")
 
-            def _do_shutdown() -> None:
-                # 1. Parar simulación y guardar checkpoint
-                rv = app_state.get_runner()
-                if rv:
-                    app_state._pause_event.clear()
-                    try:
-                        rv.shutdown()
-                    except Exception as e:
-                        print(f"[UI] shutdown error: {e}", file=sys.stderr)
-                sim_t = app_state.sim_thread
-                if sim_t is not None and sim_t.is_alive():
-                    sim_t.join(timeout=5)
-
-                # 2. Matar procesos externos en paralelo
-                def _kill_liminal() -> None:
-                    proc = app_state._liminal_proc
-                    if proc is not None:
-                        try:
-                            proc.terminate()
-                        except Exception:
-                            pass
-                        app_state._liminal_proc = None
-
-                def _kill_ollama() -> None:
-                    try:
-                        import psutil
-                        for p in psutil.process_iter(["name", "pid"]):
-                            try:
-                                if "ollama" in p.info["name"].lower():
-                                    p.kill()
-                                    print(f"[UI] Ollama PID {p.info['pid']} terminado.")
-                            except (psutil.NoSuchProcess, psutil.AccessDenied):
-                                pass
-                    except Exception as e:
-                        print(f"[UI] ollama kill error: {e}", file=sys.stderr)
-
-                t_lim = threading.Thread(target=_kill_liminal, daemon=True)
-                t_oll = threading.Thread(target=_kill_ollama,  daemon=True)
-                t_lim.start()
-                t_oll.start()
-                t_lim.join(timeout=3)
-                t_oll.join(timeout=3)
-
-                # 3. Matar el propio proceso (main.py)
-                import os as _os
-                _os._exit(0)
-
-            # Lanzar en hilo para no bloquear el event loop de NiceGUI
-            threading.Thread(target=_do_shutdown, daemon=True, name="cerrar_sim").start()
-
-        ui.button("✕ Cerrar", on_click=_cerrar_simulacion).classes(
-            "text-xs bg-red-800 hover:bg-red-700 text-white px-3 py-1 rounded ml-2"
-        )
+        if on_detener is not None:
+            ui.button("■ Detener corrida", on_click=_detener).classes(
+                "text-xs bg-red-800 hover:bg-red-700 text-white px-3 py-1 rounded ml-2"
+            )
 
     # ── Tabs ──────────────────────────────────────────────────────────────────
     with ui.tabs().classes("bg-purple-900 text-white w-full") as tabs:
@@ -3127,34 +2890,3 @@ def build_monitor_page(app_state) -> None:
             print(f"[UI] _refresh: {e}\n{traceback.format_exc()}", file=sys.stderr)
 
     ui.timer(2.0, _refresh)
-
-
-# ── Lanzamiento ───────────────────────────────────────────────────────────────
-
-def launch_ui(app_state,
-              DB_PATH=None, CP_DIR=None, SEEDS_DIR=None,
-              LIMINAL_SERVER=None) -> None:
-    from nicegui import ui
-
-    DB_PATH        = DB_PATH        or ROOT / "data" / "db" / "simulation.db"
-    CP_DIR         = CP_DIR         or ROOT / "data" / "checkpoints"
-    SEEDS_DIR      = SEEDS_DIR      or ROOT / "data" / "seeds"
-    LIMINAL_SERVER = LIMINAL_SERVER or ROOT / "liminal_server" / "main.py"
-
-    @ui.page("/")
-    def launcher():
-        build_launcher_page(app_state, DB_PATH, CP_DIR, SEEDS_DIR, LIMINAL_SERVER)
-
-    @ui.page("/monitor")
-    def monitor():
-        build_monitor_page(app_state)
-
-    ui.run(
-        title             = "PSYCHE SIMULACRA",
-        port              = 8080,
-        dark              = True,
-        show              = True,
-        favicon           = "🧠",
-        reload            = False,
-        reconnect_timeout = 10,
-    )
