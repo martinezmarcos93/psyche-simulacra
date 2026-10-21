@@ -97,3 +97,10 @@ _privado/
 _PRIVADO*/
 NOTAS_*.md
 _notas*.md
+
+# ── Panel multicorrida ───────────────────────────────────────────────────────
+# Cada corrida (BD, checkpoints, métricas, vault) y las poblaciones generadas
+data/corridas/
+data/poblaciones/
+data/psyche.log
+.venv-build/
