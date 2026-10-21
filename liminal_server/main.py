@@ -18,15 +18,24 @@ import asyncio
 import json
 import logging
 import sys
+from pathlib import Path
+
+if __package__ in (None, ""):
+    # Ejecutado como script (`python liminal_server/main.py`): habilitar los
+    # imports del paquete. Con imports relativos, el `core` de este servidor
+    # nunca se confunde con el `core` del motor (ni empaquetado con PyInstaller).
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    __package__ = "liminal_server"
+    import liminal_server  # noqa: F401
 
 from aiohttp import web
 
-import config
-from core.liminal_world import LiminalWorld
-from core.liminal_clock import LiminalClock
-from core.simulation_registry import SimulationRegistry
-from core.agent_registry import AgentRegistry
-from transport.websocket_server import LiminalServer
+from . import config
+from .core.liminal_world import LiminalWorld
+from .core.liminal_clock import LiminalClock
+from .core.simulation_registry import SimulationRegistry
+from .core.agent_registry import AgentRegistry
+from .transport.websocket_server import LiminalServer
 
 
 logging.basicConfig(

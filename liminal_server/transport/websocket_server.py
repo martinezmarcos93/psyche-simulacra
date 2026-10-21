@@ -24,12 +24,12 @@ from typing import Set
 import websockets
 from websockets.server import ServerConnection
 
-from core.simulation_registry import SimulationRegistry
-from core.agent_registry import AgentRegistry
-from core.liminal_world import LiminalWorld
-from core.liminal_clock import LiminalClock
-from protocol.schemas import MsgType, PROTOCOL_VERSION
-import config as cfg
+from ..core.simulation_registry import SimulationRegistry
+from ..core.agent_registry import AgentRegistry
+from ..core.liminal_world import LiminalWorld
+from ..core.liminal_clock import LiminalClock
+from ..protocol.schemas import MsgType, PROTOCOL_VERSION
+from .. import config as cfg
 
 logger = logging.getLogger("liminal.server")
 
