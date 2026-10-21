@@ -35,7 +35,23 @@ if TYPE_CHECKING:
 
 # Experimento EDEN — desactivado por defecto; no cambia nada del comportamiento
 # existente a menos que se active explícitamente (ver docs/experiments/).
-_EDEN_ENABLED = os.environ.get("EDEN_ENABLED", "0") == "1"
+#   EDEN_MODE=off    → sin Nomos ni Serpiente (mundo libre, default)
+#   EDEN_MODE=orden  → Nomos activo todo el run, sin Serpiente (control del A/B)
+#   EDEN_MODE=eden   → Nomos + Serpiente: el orden puede romperse (tratamiento)
+# EDEN_ENABLED=1 se mantiene como alias de EDEN_MODE=eden.
+EDEN_MODES = ("off", "orden", "eden")
+
+
+def eden_mode_from_env() -> str:
+    modo = os.environ.get("EDEN_MODE", "").strip().lower()
+    if not modo:
+        modo = "eden" if os.environ.get("EDEN_ENABLED", "0") == "1" else "off"
+    if modo not in EDEN_MODES:
+        raise ValueError(f"EDEN_MODE inválido: {modo!r} (opciones: {', '.join(EDEN_MODES)})")
+    return modo
+
+
+_EDEN_MODE = eden_mode_from_env()
 
 # Pool de nombres para la descendencia (nombres no usados por los fundadores)
 _NOMBRES_POOL = [
@@ -168,10 +184,10 @@ class AgentCore:
         # Roles sociales emergentes — Hito H
         self._social_roles:     list[SocialRole]   = []
 
-        # Experimento EDEN: orden providencial + tentadora. Ausentes (None) salvo
-        # que EDEN_ENABLED=1 — no cambian nada del comportamiento por defecto.
-        self.nomos:      Nomos      | None = Nomos(seed=seed + 100) if _EDEN_ENABLED else None
-        self.serpiente:  Serpiente  | None = Serpiente(seed=seed + 101) if _EDEN_ENABLED else None
+        # Experimento EDEN: orden providencial + tentadora. Ausentes (None) con
+        # EDEN_MODE=off (default) — no cambian nada del comportamiento por defecto.
+        self.nomos:      Nomos      | None = Nomos(seed=seed + 100) if _EDEN_MODE != "off" else None
+        self.serpiente:  Serpiente  | None = Serpiente(seed=seed + 101) if _EDEN_MODE == "eden" else None
         self.eden_event: dict | None = None
 
     # ── Population management ─────────────────────────────────────────────────
