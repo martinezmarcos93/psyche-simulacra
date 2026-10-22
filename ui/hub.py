@@ -644,17 +644,27 @@ def _figura(ids: list[str]) -> dict:
         trazas.append({"type": "scatter", "mode": "lines", "x": x, "y": serie["n_tribes"],
                        "name": etiqueta, "legendgroup": rid, "showlegend": False,
                        "line": {"dash": "dot"}, "xaxis": "x2", "yaxis": "y2"})
-    eje = {"gridcolor": "#2d2d3a", "zerolinecolor": "#2d2d3a"}
+    eje = {
+        "gridcolor": "rgba(111, 133, 163, 0.18)",
+        "zerolinecolor": "rgba(214, 177, 109, 0.28)",
+        "linecolor": "rgba(111, 133, 163, 0.28)",
+        "tickfont": {"color": "#91a2bb", "size": 11},
+        "title_font": {"color": "#c6a2f2", "size": 12},
+    }
     return {
         "data": trazas,
         "layout": {
-            "paper_bgcolor": "#111827", "plot_bgcolor": "#111827",
-            "font": {"color": "#d1d5db"},
-            "margin": {"l": 50, "r": 20, "t": 30, "b": 40},
+            "paper_bgcolor": "#0b1523", "plot_bgcolor": "#0b1523",
+            "font": {"color": "#e5eaf4", "family": "Inter, Segoe UI, sans-serif", "size": 12},
+            "colorway": ["#b68ae8", "#d6b16d", "#53c7b0", "#78a9e8", "#e98b9a", "#b7c77b"],
+            "hoverlabel": {"bgcolor": "#19293f", "bordercolor": "#536a87", "font": {"color": "#e5eaf4"}},
+            "margin": {"l": 58, "r": 24, "t": 32, "b": 48},
             "grid": {"rows": 2, "columns": 1, "pattern": "independent"},
-            "xaxis": {**eje, "title": ""}, "yaxis": {**eje, "title": "Personas vivas"},
-            "xaxis2": {**eje, "title": "Años simulados"}, "yaxis2": {**eje, "title": "Tribus"},
-            "legend": {"orientation": "h", "y": -0.15},
+            "xaxis": {**eje, "title": {"text": "", "font": {"color": "#c6a2f2"}}},
+            "yaxis": {**eje, "title": {"text": "Personas vivas", "font": {"color": "#c6a2f2"}}},
+            "xaxis2": {**eje, "title": {"text": "Años simulados", "font": {"color": "#c6a2f2"}}},
+            "yaxis2": {**eje, "title": {"text": "Tribus", "font": {"color": "#c6a2f2"}}},
+            "legend": {"orientation": "h", "y": -0.15, "font": {"color": "#b8c5d8", "size": 11}},
             "annotations": [] if trazas else [{
                 "text": "Sin corridas seleccionadas", "showarrow": False,
                 "xref": "paper", "yref": "paper", "x": 0.5, "y": 0.5,
