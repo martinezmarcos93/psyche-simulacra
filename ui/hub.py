@@ -24,6 +24,7 @@ import urllib.request
 from pathlib import Path
 
 from core.runtime import corridas as C
+from ui.theme import apply_theme
 
 ROOT = Path(__file__).resolve().parent.parent
 HUB_PORT = int(os.environ.get("PSYCHE_HUB_PORT", "8080"))
@@ -265,7 +266,7 @@ def _orden_texto(est: dict, cfg: C.CorridaConfig) -> str:
 def construir_panel() -> None:
     from nicegui import ui
 
-    ui.query("body").classes("bg-gray-950")
+    apply_theme(ui)
     with ui.header().classes("bg-purple-950 text-white px-6 py-3 items-center"):
         ui.label("PSYCHE SIMULACRA").classes("text-xl font-bold tracking-widest")
         ui.label("Laboratorio de sociedades simuladas").classes("text-sm text-purple-300 ml-4")
@@ -705,7 +706,7 @@ def lanzar_panel() -> None:
 
     @ui.page("/guia")
     def guia():
-        ui.query("body").classes("bg-gray-950")
+        apply_theme(ui)
         texto = (ROOT / "docs" / "GUIA_DE_USO.md").read_text(encoding="utf-8")
         with ui.column().classes("w-full max-w-4xl mx-auto p-6 text-gray-200"):
             ui.markdown(texto, extras=["tables"]).classes("w-full")
