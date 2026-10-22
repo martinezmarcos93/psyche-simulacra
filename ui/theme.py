@@ -186,6 +186,65 @@ a:hover { color: var(--ps-violet-bright); }
 .ps-chart-frame { border: 1px solid rgba(59,80,106,.55); border-radius: 8px; overflow: hidden; background: rgba(7,13,24,.35); }
 @media (max-width: 900px) { .ps-scenario-grid { grid-template-columns: 1fr; } .ps-scenario-card { min-height: auto; } }
 
+
+/* Phase 3: live observatory */
+.ps-monitor-header {
+  min-height: 62px;
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+  gap: 16px !important;
+  background: rgba(17, 16, 34, .96) !important;
+  border-bottom: 1px solid rgba(154, 93, 224, .42);
+}
+.ps-monitor-header .ps-brand-mark { letter-spacing: .12em; }
+.ps-monitor-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(13, 22, 37, .97) !important;
+  border-bottom: 1px solid var(--ps-border-strong);
+  box-shadow: 0 7px 18px rgba(0,0,0,.16);
+  backdrop-filter: blur(12px);
+}
+.ps-monitor-tabs .q-tab { padding: 0 16px; }
+.ps-monitor-panels { background: transparent !important; }
+.ps-monitor-panels > .q-panel > .q-panel__content { padding: 14px 16px 28px; }
+.ps-monitor-panels .q-tab-panel { background: transparent !important; }
+.ps-monitor-panels .q-separator { opacity: .72; }
+.ps-stat-card {
+  position: relative;
+  min-height: 88px;
+  border-color: rgba(59,80,106,.62) !important;
+  background: linear-gradient(145deg, rgba(22,36,56,.96), rgba(12,22,36,.98)) !important;
+  transition: border-color .18s ease, transform .18s ease, box-shadow .18s ease !important;
+}
+.ps-stat-card:hover {
+  border-color: rgba(154,93,224,.6) !important;
+  box-shadow: 0 10px 24px rgba(0,0,0,.2) !important;
+}
+.ps-stat-card .text-xl, .ps-stat-card .text-lg { letter-spacing: -.025em; }
+.ps-stat-card .text-xs { letter-spacing: .09em !important; }
+.ps-pressure-card { min-height: 82px; }
+.ps-monitor-panels .q-log {
+  border: 1px solid var(--ps-border);
+  border-radius: 7px;
+  background: rgba(5,11,20,.72) !important;
+  line-height: 1.55;
+}
+.ps-monitor-panels .js-plotly-plot { border-radius: 8px; }
+.ps-monitor-panels .plot-container { border-radius: 8px; }
+.ps-monitor-panels .main-svg { overflow: visible; }
+.ps-monitor-panels .modebar { opacity: .42; transition: opacity .15s ease; }
+.ps-monitor-panels .js-plotly-plot:hover .modebar { opacity: .95; }
+.ps-monitor-panels .q-btn { min-height: 32px; }
+.ps-monitor-panels .q-field--dense .q-field__control { min-height: 34px; }
+@media (max-width: 900px) {
+  .ps-monitor-header { flex-wrap: wrap; gap: 8px !important; }
+  .ps-monitor-header .q-row { margin-left: 0 !important; }
+  .ps-monitor-tabs .q-tab { padding-inline: 10px; min-width: auto; }
+  .ps-monitor-panels > .q-panel > .q-panel__content { padding: 8px 6px 18px; }
+}
+
 @media (max-width: 760px) {
   .q-header { padding-inline: 12px !important; }
   .q-card { border-radius: 8px !important; }
