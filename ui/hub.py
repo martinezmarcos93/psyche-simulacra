@@ -631,7 +631,9 @@ def _seccion_comparar(ui, tabla) -> None:
 
 def _figura(ids: list[str]) -> dict:
     trazas = []
+    colores = ["#b68ae8", "#d6b16d", "#53c7b0", "#78a9e8", "#e98b9a", "#b7c77b"]
     for i, rid in enumerate(ids):
+        color = colores[i % len(colores)]
         d = C.directorio_corridas() / rid
         if not d.is_dir():
             continue
@@ -640,10 +642,13 @@ def _figura(ids: list[str]) -> dict:
         x = [v / 365 for v in serie["dia"]]
         etiqueta = cfg.nombre or rid
         trazas.append({"type": "scatter", "mode": "lines", "x": x, "y": serie["n_alive"],
-                       "name": etiqueta, "legendgroup": rid, "xaxis": "x", "yaxis": "y"})
+                       "name": etiqueta, "legendgroup": rid,
+                       "line": {"color": color, "width": 2.5},
+                       "xaxis": "x", "yaxis": "y"})
         trazas.append({"type": "scatter", "mode": "lines", "x": x, "y": serie["n_tribes"],
                        "name": etiqueta, "legendgroup": rid, "showlegend": False,
-                       "line": {"dash": "dot"}, "xaxis": "x2", "yaxis": "y2"})
+                       "line": {"color": color, "dash": "dot", "width": 1.8},
+                       "xaxis": "x2", "yaxis": "y2"})
     eje = {
         "gridcolor": "rgba(111, 133, 163, 0.18)",
         "zerolinecolor": "rgba(214, 177, 109, 0.28)",
