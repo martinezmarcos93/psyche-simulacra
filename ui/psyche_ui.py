@@ -2240,7 +2240,7 @@ def build_monitor_page(app_state, hub_url: str | None = None,
             with ui.dialog() as radar_dialog, ui.card().classes(
                 "bg-gray-900 border border-purple-800 ps-agent-dialog"
             ).style("min-width:min(520px, 92vw);max-width:640px;width:92vw"):
-                refs["radar_plot"]  = ui.plotly(_dark_placeholder()).style("width:480px;height:320px")
+                refs["radar_plot"]  = ui.plotly(_dark_placeholder()).classes("ps-agent-radar").style("width:100%;height:320px")
                 refs["radar_stats"] = ui.html("", sanitize=False).classes("px-2 pb-1 text-xs text-gray-300")
                 ui.separator().classes("mx-2 my-1")
                 ui.label("Log episódico").classes("text-xs text-gray-400 uppercase px-2 pt-1")
