@@ -266,7 +266,6 @@ def _orden_texto(est: dict, cfg: C.CorridaConfig) -> str:
 def construir_panel() -> None:
     from nicegui import ui
 
-    app.add_static_files("/assets", str(ROOT / "assets"))
     apply_theme(ui)
     with ui.header().classes("text-white items-center ps-main-header"):
         ui.image("/assets/psyche-seal.svg").classes("ps-brand-seal")
@@ -773,6 +772,8 @@ def construir_visor(rid: str) -> None:
 
 def lanzar_panel() -> None:
     from nicegui import app, ui
+
+    app.add_static_files("/assets", str(ROOT / "assets"))
 
     @ui.page("/")
     def panel():
