@@ -590,7 +590,7 @@ def _build_hex_map(
     fig.update_layout(
         paper_bgcolor="#0b1523", plot_bgcolor="#0b1523",
         showlegend=True,
-        legend=dict(font=dict(color="#ccc", size=10), bgcolor="rgba(0,0,0,0.5)",
+        legend=dict(font=dict(color="#dbe4f2", size=10), bgcolor="rgba(0,0,0,0.5)",
                     itemsizing="constant"),
         margin=dict(l=0, r=0, t=24, b=0),
         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False,
@@ -667,7 +667,7 @@ def _build_liminal_map(state: dict) -> "go.Figure | None":
     fig.update_layout(
         paper_bgcolor="#0b1523", plot_bgcolor="#0b1523",
         showlegend=True,
-        legend=dict(font=dict(color="#aaa", size=9), bgcolor="rgba(0,0,0,0.5)"),
+        legend=dict(font=dict(color="#aab8cc", size=9), bgcolor="rgba(0,0,0,0.5)"),
         margin=dict(l=0, r=0, t=24, b=0),
         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False,
                    scaleanchor="y", scaleratio=1),
@@ -755,13 +755,13 @@ def _build_trend_panel(
             fillcolor=col, line=dict(width=0), layer="below",
         ))
 
-    _ax = dict(color="#aaa", gridcolor="#1f2937")
+    _ax = dict(color="#aaa", gridcolor="rgba(111,133,163,0.18)")
     fig.update_layout(
         paper_bgcolor="#0b1523", plot_bgcolor="#0b1523",
         height=580,
         margin=dict(l=50, r=10, t=30, b=40),
         showlegend=True,
-        legend=dict(font=dict(color="#aaa", size=9), bgcolor="rgba(0,0,0,0)",
+        legend=dict(font=dict(color="#aab8cc", size=9), bgcolor="rgba(0,0,0,0)",
                     orientation="h", y=-0.07),
         shapes=shapes,
     )
@@ -805,14 +805,14 @@ def _build_emergence_figure(rows: list[dict]) -> "go.Figure | None":
 
     fig = go.Figure(data=traces)
     fig.update_layout(
-        title=dict(text="Métricas de emergencia cultural", font=dict(color="#ccc", size=13)),
+        title=dict(text="Métricas de emergencia cultural", font=dict(color="#dbe4f2", size=13)),
         paper_bgcolor="#0b1523", plot_bgcolor="#0b1523",
         showlegend=True,
-        legend=dict(font=dict(color="#aaa", size=10), orientation="h",
+        legend=dict(font=dict(color="#aab8cc", size=10), orientation="h",
                     yanchor="bottom", y=1.02, xanchor="left", x=0),
         margin=dict(l=40, r=10, t=50, b=30),
-        xaxis=dict(color="#aaa", gridcolor="#1f2937", title="Día simulado"),
-        yaxis=dict(color="#aaa", gridcolor="#1f2937"),
+        xaxis=dict(color="#aaa", gridcolor="rgba(111,133,163,0.18)", title="Día simulado"),
+        yaxis=dict(color="#aaa", gridcolor="rgba(111,133,163,0.18)"),
     )
     return fig
 
@@ -862,9 +862,9 @@ def _build_icl_gauges(
             mode="gauge+number",
             value=round(val, 3),
             domain=dict(x=[x - 0.14, x + 0.14], y=[0, 1]),
-            title=dict(text=title, font=dict(color="#ccc", size=11)),
+            title=dict(text=title, font=dict(color="#dbe4f2", size=11)),
             gauge=dict(
-                axis=dict(range=[0, 1], tickcolor="#555", tickfont=dict(size=8, color="#666")),
+                axis=dict(range=[0, 1], tickcolor="#91a2bb", tickfont=dict(size=8, color="#666")),
                 bar=dict(color=col),
                 bgcolor="#1f2937",
                 borderwidth=0,
@@ -917,13 +917,13 @@ def _build_icl_sparkline(history: "deque[dict]") -> "go.Figure | None":
             hovertemplate=f"{name}: %{{y:.2%}}<extra></extra>",
         ))
     fig.update_layout(
-        title=dict(text="Evolución de presiones del ICL", font=dict(color="#ccc", size=11)),
+        title=dict(text="Evolución de presiones del ICL", font=dict(color="#dbe4f2", size=11)),
         paper_bgcolor="#0b1523", plot_bgcolor="#0b1523",
         height=160,
         margin=dict(l=40, r=10, t=30, b=30),
-        xaxis=dict(color="#555", gridcolor="#1f2937", title="día"),
-        yaxis=dict(color="#aaa", gridcolor="#1f2937", range=[0, 1], tickformat=".0%"),
-        legend=dict(font=dict(color="#aaa", size=9), bgcolor="rgba(0,0,0,0)",
+        xaxis=dict(color="#91a2bb", gridcolor="rgba(111,133,163,0.18)", title="día"),
+        yaxis=dict(color="#aaa", gridcolor="rgba(111,133,163,0.18)", range=[0, 1], tickformat=".0%"),
+        legend=dict(font=dict(color="#aab8cc", size=9), bgcolor="rgba(0,0,0,0)",
                     orientation="h", y=-0.25),
     )
     return fig
@@ -974,7 +974,7 @@ def _build_symbol_figure(symbols: dict, local_fields: dict | None = None):
     fig.update_layout(
         paper_bgcolor="#0b1523", plot_bgcolor="#0b1523",
         margin=dict(l=130, r=60, t=10, b=20),
-        xaxis=dict(range=[0, 1.15], color="#aaa", gridcolor="#1f2937"),
+        xaxis=dict(range=[0, 1.15], color="#aaa", gridcolor="rgba(111,133,163,0.18)"),
         yaxis=dict(color="#aaa"),
         showlegend=False,
     )
@@ -1190,10 +1190,10 @@ def _build_social_graph(cp: dict) -> "go.Figure | None":
     )
     fig = go.Figure(data=traces)
     fig.update_layout(
-        title=dict(text=stats_text, font=dict(color="#aaa", size=11)),
+        title=dict(text=stats_text, font=dict(color="#aab8cc", size=11)),
         paper_bgcolor="#0b1523", plot_bgcolor="#0b1523",
         showlegend=True,
-        legend=dict(font=dict(color="#ccc", size=9), bgcolor="rgba(0,0,0,0.4)",
+        legend=dict(font=dict(color="#dbe4f2", size=9), bgcolor="rgba(0,0,0,0.4)",
                     x=0.01, y=0.99),
         margin=dict(l=0, r=0, t=30, b=0),
         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
@@ -1438,14 +1438,14 @@ def _build_dream_frequency_figure(cp: dict) -> "go.Figure | None":
 
     fig.update_layout(
         title=dict(text="Frecuencia arquetipos en sueños vs carga ICL",
-                   font=dict(color="#ccc", size=12)),
+                   font=dict(color="#dbe4f2", size=12)),
         paper_bgcolor="#0b1523", plot_bgcolor="#0b1523",
-        showlegend=True, legend=dict(font=dict(color="#aaa", size=9),
+        showlegend=True, legend=dict(font=dict(color="#aab8cc", size=9),
                                      orientation="h", y=1.12),
         margin=dict(l=40, r=40, t=55, b=50),
         xaxis=dict(color="#aaa", tickfont=dict(size=9)),
-        yaxis=dict(color="#aaa", gridcolor="#1f2937", title="# sueños"),
-        yaxis2=dict(overlaying="y", side="right", color="#555",
+        yaxis=dict(color="#aaa", gridcolor="rgba(111,133,163,0.18)", title="# sueños"),
+        yaxis2=dict(overlaying="y", side="right", color="#91a2bb",
                     title="ICL ×10", showgrid=False),
         barmode="group",
     )
@@ -1855,7 +1855,7 @@ def _build_agent_radar(agent_data: dict) -> "go.Figure | None":
     fig.update_layout(
         polar=dict(
             bgcolor="#0a0020",
-            radialaxis=dict(range=[0, 1], color="#555", gridcolor="#222", tickfont=dict(size=8)),
+            radialaxis=dict(range=[0, 1], color="#91a2bb", gridcolor="#222", tickfont=dict(size=8)),
             angularaxis=dict(color="#888", gridcolor="#222", tickfont=dict(size=9)),
         ),
         paper_bgcolor="#0b1523",
