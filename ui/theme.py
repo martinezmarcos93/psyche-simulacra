@@ -164,6 +164,28 @@ a:hover { color: var(--ps-violet-bright); }
 }
 .ps-panel-title { color: #d9c2f6; font-weight: 700; }
 .ps-muted { color: var(--ps-muted); }
+
+/* Phase 2: experiment launcher */
+.ps-page-shell { max-width: 1320px !important; padding: 28px 24px 44px !important; gap: 22px !important; }
+.ps-brand-mark { color: #f0e7ff !important; text-shadow: 0 0 24px rgba(191,140,255,.18); }
+.ps-brand-subtitle { color: #a9b8ce !important; }
+.ps-hero-card { border-color: #35425d !important; background: linear-gradient(145deg,#121f31,#0b1523) !important; }
+.ps-section-heading { color: #e5d4ff !important; font-size: 1.15rem !important; font-weight: 750 !important; }
+.ps-section-kicker { color: var(--ps-gold) !important; font-size: .68rem !important; font-weight: 750 !important; letter-spacing: .16em; text-transform: uppercase; }
+.ps-section-description { max-width: 880px; line-height: 1.65 !important; }
+.ps-scenario-grid { display: grid !important; grid-template-columns: repeat(3,minmax(0,1fr)); align-items: stretch; }
+.ps-scenario-card { min-width: 0 !important; min-height: 128px; border: 1px solid #304159 !important; border-radius: 9px !important; background: #142338 !important; transition: border-color .18s ease,transform .18s ease !important; }
+.ps-scenario-card:hover { border-color: #9a72c5 !important; transform: translateY(-2px); }
+.ps-scenario-description { line-height: 1.55 !important; padding-left: 30px; }
+.ps-primary-fields { padding: 16px; border: 1px solid rgba(59,80,106,.5); border-radius: 8px; background: rgba(5,12,22,.34); }
+.ps-duration-row { padding: 10px 14px; border-radius: 8px; background: rgba(5,12,22,.42); border: 1px solid rgba(59,80,106,.5); }
+.ps-config-section { margin-block: 7px !important; background: rgba(14,25,41,.66) !important; }
+.ps-run-summary { padding: 12px 15px; border: 1px solid rgba(154,93,224,.32); border-radius: 7px; background: rgba(95,51,135,.13); color: #d8baff !important; font-weight: 650; line-height: 1.5; }
+.ps-launch-btn { min-width: 156px; min-height: 42px; padding-inline: 22px !important; }
+.ps-runs-card,.ps-compare-card { background: linear-gradient(145deg,#111e2e,#0b1523) !important; }
+.ps-chart-frame { border: 1px solid rgba(59,80,106,.55); border-radius: 8px; overflow: hidden; background: rgba(7,13,24,.35); }
+@media (max-width: 900px) { .ps-scenario-grid { grid-template-columns: 1fr; } .ps-scenario-card { min-height: auto; } }
+
 @media (max-width: 760px) {
   .q-header { padding-inline: 12px !important; }
   .q-card { border-radius: 8px !important; }
