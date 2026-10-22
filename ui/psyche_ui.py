@@ -1957,6 +1957,8 @@ def build_monitor_page(app_state, hub_url: str | None = None,
     on_detener — callback del botón "Detener corrida".
     """
     from nicegui import ui
+    from ui.theme import apply_theme
+    apply_theme(ui)
     from ui.db_reader import (
         load_checkpoint, load_agent_metrics,
         load_climate_metrics, load_scenario_metrics, load_deaths_log,
