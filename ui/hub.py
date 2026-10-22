@@ -277,10 +277,10 @@ def construir_panel() -> None:
 
     with ui.row().classes("w-full ps-app-layout no-wrap"):
         with ui.column().classes("ps-sidebar"):
-            ui.link("▷  Corridas", "#ps-runs").classes("ps-nav-link ps-nav-active")
-            ui.link("◉  Observatorio", "#ps-observatory").classes("ps-nav-link")
+            ui.link("✦  Nueva tanda", "#ps-nueva").classes("ps-nav-link")
+            ui.link("▷  Corridas", "#ps-runs").classes("ps-nav-link")
             ui.link("▥  Comparar", "#ps-compare").classes("ps-nav-link")
-            ui.link("▤  Archivo", "#ps-runs").classes("ps-nav-link")
+            ui.link("❖  Guía de uso", "/guia", new_tab=True).classes("ps-nav-link")
             ui.image("/assets/observatory-mandala.svg").classes("ps-sidebar-mandala")
             ui.label("“Modelar para observar lo que siempre ha estado ahí.”").classes("ps-sidebar-quote")
         with ui.column().classes("w-full ps-page-shell"):
@@ -288,42 +288,64 @@ def construir_panel() -> None:
                 with ui.column().classes("ps-dashboard-main"):
                     _seccion_nueva(ui)
                 _seccion_estado_laboratorio(ui)
-            with ui.row().classes("w-full ps-dashboard-bottom no-wrap"):
-                tabla = _seccion_corridas(ui)
-                _seccion_comparar(ui, tabla)
+            tabla = _seccion_corridas(ui)
+            _seccion_comparar(ui, tabla)
 
 
 def _seccion_estado_laboratorio(ui) -> None:
-    """Resumen lateral del estado efectivo del panel; no inicia ni modifica corridas."""
+    """Resumen lateral del estado real del laboratorio (se refresca solo).
+
+    Solo lee: no inicia ni modifica corridas.
+    """
     from nicegui import ui
 
-    dirs = C.listar_corridas()
-    activas = GESTOR.activas()
-    ollama = _ollama_estado()
-    ollama_texto = {"activo": "Funcionando", "instalado": "Instalado", "no_instalado": "No instalado"}[ollama]
+    filas: dict[str, tuple] = {}
     with ui.card().classes("ps-lab-status-card"):
-        ui.label("⚙  Estado del laboratorio").classes("ps-lab-status-title")
+        ui.label("Estado del laboratorio").classes("ps-lab-status-title")
         with ui.column().classes("ps-status-list"):
-            for icono, nombre, estado, ok in [
-                ("⚙", "Motor de simulación", "Listo", True),
-                ("▤", "Registro de corridas", f"{len(dirs)} registradas", True),
-                ("✣", "Narrativa (Ollama)", ollama_texto, ollama == "activo"),
+            for clave, icono, nombre in [
+                ("corriendo", "▶", "En curso"),
+                ("cola", "⧗", "En cola"),
+                ("terminadas", "■", "Terminadas"),
+                ("registradas", "▤", "Registradas"),
+                ("ollama", "✣", "Narrativa (Ollama)"),
             ]:
                 with ui.row().classes("ps-status-row items-center no-wrap"):
                     ui.label(icono).classes("ps-status-icon")
                     ui.label(nombre).classes("ps-status-name")
                     ui.space()
-                    ui.label("●").classes("ps-status-dot " + ("is-ready" if ok else "is-idle"))
-                    ui.label(estado).classes("ps-status-value")
+                    punto = ui.label("●").classes("ps-status-dot")
+                    valor = ui.label("—").classes("ps-status-value")
+                filas[clave] = (punto, valor)
         ui.separator()
         with ui.row().classes("w-full items-center justify-between ps-active-runs"):
-            ui.label("Corridas activas").classes("ps-panel-title")
-            ui.label(f"{activas} / {GESTOR.max_paralelo}").classes("ps-active-count")
-        ui.label("Procesos de simulación en ejecución o inicialización.").classes("ps-status-caption")
-        ui.separator()
-        ui.label("Símbolo del observatorio").classes("ps-panel-title")
-        ui.image("/assets/observatory-mandala.svg").classes("ps-status-art")
-        ui.label("Mundo, mito y psicología: observación de sistemas emergentes.").classes("ps-status-caption")
+            ui.label("Corridas simultáneas").classes("ps-panel-title")
+            activas_lbl = ui.label("—").classes("ps-active-count")
+        ui.label("En curso sobre el máximo permitido (se cambia en Avanzado).").classes(
+            "ps-status-caption")
+
+    def _poner(clave: str, texto: str, ok: bool | None) -> None:
+        punto, valor = filas[clave]
+        valor.set_text(texto)
+        punto.classes(remove="is-ready is-idle is-off",
+                      add={True: "is-ready", False: "is-off", None: "is-idle"}[ok])
+
+    def _refrescar() -> None:
+        fases = [GESTOR.estado(d).get("fase") for d in C.listar_corridas()]
+        activas = sum(1 for f in fases if f in C.FASES_ACTIVAS)
+        _poner("corriendo", str(activas), True if activas else None)
+        en_cola = sum(1 for f in fases if f == "en_cola")
+        _poner("cola", str(en_cola), None)
+        _poner("terminadas", str(sum(1 for f in fases if f in C.FASES_FINALES)), None)
+        _poner("registradas", str(len(fases)), None)
+        ollama = _ollama_estado()
+        _poner("ollama", {"activo": "Funcionando", "instalado": "Instalado",
+                          "no_instalado": "No instalado"}[ollama],
+               {"activo": True, "instalado": None, "no_instalado": False}[ollama])
+        activas_lbl.set_text(f"{activas} / {GESTOR.max_paralelo}")
+
+    _refrescar()
+    ui.timer(3.0, _refrescar)
 
 
 def _ajustes_finos(ui, seccion: str, destino: dict) -> None:
@@ -340,12 +362,11 @@ def _ajustes_finos(ui, seccion: str, destino: dict) -> None:
 def _seccion_nueva(ui) -> None:
     pobl = _poblaciones()
     finos: dict[str, object] = {}
-    with ui.card().classes("w-full bg-gray-900 text-gray-100 p-6 ps-hero-card").props("id=ps-observatory"):
+    with ui.card().classes("w-full bg-gray-900 text-gray-100 p-6 ps-hero-card").props("id=ps-nueva"):
         with ui.row().classes("w-full items-start justify-between ps-hero-heading-row"):
             with ui.column().classes("gap-1"):
                 ui.label("DISEÑO DEL EXPERIMENTO").classes("ps-section-kicker")
                 ui.label("Nueva tanda de corridas").classes("text-lg font-semibold text-purple-200 ps-section-heading")
-            ui.button("Configurar rápido", icon="settings", on_click=lambda: ui.notify("Los parámetros avanzados están disponibles en cada sección.")).props("outline dense").classes("ps-quick-config")
         ui.label("Elegí uno o más escenarios. Cada escenario se corre una vez por réplica; "
                  "las réplicas usan semillas consecutivas, y el mismo número de semilla "
                  "significa el mismo mundo y la misma población inicial en todos los escenarios."

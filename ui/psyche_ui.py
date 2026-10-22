@@ -1910,7 +1910,7 @@ def _tension_bar(label: str, value: float, color_fn=None):
             f"<div style='background:#1f2937;border-radius:4px;height:8px;width:100%;margin-top:4px'>"
             f"<div style='background:{color};width:{w}%;height:8px;border-radius:4px'></div></div>",
             sanitize=False,
-        )
+        ).classes("w-full")  # sin esto el contenedor se encoge a ancho 0 y la barra no se ve
     return val, bar_ref
 
 
@@ -1949,6 +1949,11 @@ def conectar_liminal(runner, app_state, host: str, port: int, seed: int) -> bool
 
 # ── Página de monitoreo ───────────────────────────────────────────────────────
 
+# Estado de la simulación en el encabezado del monitor, en castellano
+_SIM_TEXTO = {"running": "corriendo", "paused": "pausada", "stopped": "detenida",
+              "starting": "iniciando"}
+
+
 def build_monitor_page(app_state, hub_url: str | None = None,
                        titulo: str | None = None, on_detener=None) -> None:
     """Monitor en vivo de UNA corrida.
@@ -1984,7 +1989,7 @@ def build_monitor_page(app_state, hub_url: str | None = None,
         if titulo:
             ui.label(titulo).classes("text-sm text-purple-200 italic")
         refs_hdr: dict = {}
-        with ui.row().classes("gap-6 ml-4 flex-1 items-center"):
+        with ui.row().classes("gap-6 ml-4 flex-1 items-center ps-monitor-stats"):
             refs_hdr["dia"]    = ui.label("Día —").classes("text-purple-200 text-sm")
             refs_hdr["vivos"]  = ui.label("Agentes —").classes("text-green-300 text-sm")
             refs_hdr["tribus"] = ui.label("Tribus —").classes("text-blue-300 text-sm")
@@ -2521,7 +2526,7 @@ def build_monitor_page(app_state, hub_url: str | None = None,
             refs_hdr["vivos"].set_text(f"{app_state.agentes_vivos} vivos")
             if state_r:
                 sim_s = state_r.simulation
-                refs_hdr["estado"].set_text(sim_s)
+                refs_hdr["estado"].set_text(_SIM_TEXTO.get(sim_s, sim_s))
                 refs_hdr["estado"].props(f'color="{_SIM_COLORS.get(sim_s,"grey")}"')
 
             if snap is not None:
@@ -2593,6 +2598,8 @@ def build_monitor_page(app_state, hub_url: str | None = None,
                 for key, val in [("tension_emoc_bar", ep), ("tension_mito_bar", mp), ("confusion_bar", con)]:
                     color = "#e74c3c" if val > 0.7 else "#f39c12" if val > 0.4 else "#2ecc71"
                     w = int(val * 100)
+                    # El número toma el mismo color que la barra
+                    refs[key.removesuffix("_bar")].style(f"color:{color}")
                     refs[key].set_content(
                         f"<div style='background:#1f2937;border-radius:4px;height:8px;width:100%;margin-top:4px'>"
                         f"<div style='background:{color};width:{w}%;height:8px;border-radius:4px'></div></div>"
