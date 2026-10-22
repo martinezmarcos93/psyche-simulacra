@@ -598,7 +598,7 @@ def _build_hex_map(
         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
         title=dict(
             text=f"{n_exp}/{n_tot} hexes explorados ({100*n_exp//max(n_tot,1)}%)",
-            font=dict(color="#888", size=11),
+            font=dict(color="#c6a2f2", size=11),
         ),
         dragmode="pan",
         uirevision="map",
@@ -675,7 +675,7 @@ def _build_liminal_map(state: dict) -> "go.Figure | None":
         title=dict(
             text=(f"Zona Liminal · tick {state.get('tick', 0)} · "
                   f"{len(agents)} agentes · {state.get('n_sims', 0)} sims"),
-            font=dict(color="#888", size=11),
+            font=dict(color="#c6a2f2", size=11),
         ),
         dragmode="pan", uirevision="liminal_map",
     )
@@ -1137,7 +1137,7 @@ def _build_social_graph(cp: dict) -> "go.Figure | None":
     if dx_list:
         traces.append(go.Scatter(
             x=dx_list, y=dy_list, mode="markers",
-            marker=dict(symbol="x-thin-open", size=7, color="#555566",
+            marker=dict(symbol="x-thin-open", size=8, color="#91a2bb",
                         line=dict(width=1.2)),
             text=dead_t, hoverinfo="text", name="Muertos",
         ))
@@ -1178,7 +1178,7 @@ def _build_social_graph(cp: dict) -> "go.Figure | None":
             marker=dict(size=12, color=tribe_node_c[tid],
                         line=dict(color=border, width=2)),
             text=tribe_labels[tid],
-            textfont=dict(size=7, color="#ddd"),
+            textfont=dict(size=8, color="#dbe4f2"),
             textposition="top center",
             hovertext=tribe_node_t[tid], hoverinfo="text",
             name=tid[:14],
@@ -1854,9 +1854,9 @@ def _build_agent_radar(agent_data: dict) -> "go.Figure | None":
     ))
     fig.update_layout(
         polar=dict(
-            bgcolor="#0a0020",
-            radialaxis=dict(range=[0, 1], color="#91a2bb", gridcolor="#222", tickfont=dict(size=8)),
-            angularaxis=dict(color="#888", gridcolor="#222", tickfont=dict(size=9)),
+            bgcolor="#101c2c",
+            radialaxis=dict(range=[0, 1], color="#91a2bb", gridcolor="rgba(111,133,163,0.24)", tickfont=dict(size=8)),
+            angularaxis=dict(color="#b8c5d8", gridcolor="rgba(111,133,163,0.24)", tickfont=dict(size=9)),
         ),
         paper_bgcolor="#0b1523",
         showlegend=False,
@@ -2182,7 +2182,7 @@ def build_monitor_page(app_state, hub_url: str | None = None,
                 refs["soc_hub"]     = ui.label("Hub: —").classes("text-xs text-yellow-300")
                 refs["soc_ent"]     = ui.label("Entrelazados: —").classes("text-xs text-purple-300")
 
-            refs["plot_social"] = ui.plotly(_dark_placeholder()).classes("w-full px-2").style("height:58vh")
+            refs["plot_social"] = ui.plotly(_dark_placeholder()).classes("w-full px-2 ps-network-plot").style("height:58vh")
 
             ui.separator().classes("mx-4 mt-2 mb-1")
 
@@ -2194,7 +2194,7 @@ def build_monitor_page(app_state, hub_url: str | None = None,
                     value="(todas)",
                     label="Tribu",
                 ).classes("text-xs w-40")
-            refs["soc_edge_table"] = ui.html("", sanitize=False).classes("px-4 pb-4 overflow-x-auto")
+            refs["soc_edge_table"] = ui.html("", sanitize=False).classes("px-4 pb-4 overflow-x-auto ps-network-table")
 
         # ── Tab Agentes ───────────────────────────────────────────────────────
         with ui.tab_panel(t_agentes):
@@ -2234,12 +2234,12 @@ def build_monitor_page(app_state, hub_url: str | None = None,
                 row_key="nombre",
                 pagination={"rowsPerPage": 25},
                 selection="single",
-            ).classes("w-full px-4")
+             ).classes("w-full px-4 ps-agents-table")
 
             # G1 — Dialog con radar arquetípico + D4 log episódico al hacer click en fila
             with ui.dialog() as radar_dialog, ui.card().classes(
-                "bg-gray-900 border border-purple-800"
-            ).style("min-width:520px;max-width:640px"):
+                "bg-gray-900 border border-purple-800 ps-agent-dialog"
+            ).style("min-width:min(520px, 92vw);max-width:640px;width:92vw"):
                 refs["radar_plot"]  = ui.plotly(_dark_placeholder()).style("width:480px;height:320px")
                 refs["radar_stats"] = ui.html("", sanitize=False).classes("px-2 pb-1 text-xs text-gray-300")
                 ui.separator().classes("mx-2 my-1")
@@ -2322,12 +2322,12 @@ def build_monitor_page(app_state, hub_url: str | None = None,
                     ui.label("Registro por tribu").classes(
                         "text-sm font-semibold text-purple-300 mb-2"
                     )
-                    refs["dreams_tribe_html"] = ui.html("", sanitize=False).classes("text-sm text-gray-300")
+                    refs["dreams_tribe_html"] = ui.html("", sanitize=False).classes("text-sm text-gray-300 ps-lore-panel")
                 with ui.column().classes("flex-1"):
                     ui.label("Registro por individuo").classes(
                         "text-sm font-semibold text-purple-300 mb-2"
                     )
-                    refs["dreams_html"] = ui.html("", sanitize=False).classes("text-sm text-gray-300")
+                    refs["dreams_html"] = ui.html("", sanitize=False).classes("text-sm text-gray-300 ps-lore-panel")
 
         # ── Tab Civilización ──────────────────────────────────────────────────
         with ui.tab_panel(t_civiliz):
@@ -2336,7 +2336,7 @@ def build_monitor_page(app_state, hub_url: str | None = None,
                 "text-xs text-gray-400 uppercase px-4 pt-4"
             )
             refs["culture_structures_html"] = ui.html("", sanitize=False).classes(
-                "px-4 pb-3 text-sm text-gray-300"
+                "px-4 pb-3 text-sm text-gray-300 ps-lore-panel"
             )
 
             ui.separator().classes("mx-4 mt-1 mb-2")
@@ -2346,7 +2346,7 @@ def build_monitor_page(app_state, hub_url: str | None = None,
                 "text-xs text-gray-400 uppercase px-4"
             )
             refs["deities_html"] = ui.html("", sanitize=False).classes(
-                "px-4 pb-3"
+                "px-4 pb-3 ps-lore-panel"
             )
 
             ui.separator().classes("mx-4 mt-1 mb-2")
@@ -2356,12 +2356,12 @@ def build_monitor_page(app_state, hub_url: str | None = None,
                     ui.label("Estructuras — Altares, refugios, depósitos").classes(
                         "text-sm font-semibold text-purple-300 mb-2"
                     )
-                    refs["structures_html"] = ui.html("", sanitize=False).classes("text-sm text-gray-300")
+                    refs["structures_html"] = ui.html("", sanitize=False).classes("text-sm text-gray-300 ps-lore-panel")
                 with ui.column().classes("flex-1"):
                     ui.label("Tecnologías desarrolladas").classes(
                         "text-sm font-semibold text-purple-300 mb-2"
                     )
-                    refs["technologies_html"] = ui.html("", sanitize=False).classes("text-sm text-gray-300")
+                    refs["technologies_html"] = ui.html("", sanitize=False).classes("text-sm text-gray-300 ps-lore-panel")
 
             ui.separator().classes("mx-4 mt-3 mb-2")
 
@@ -2370,7 +2370,7 @@ def build_monitor_page(app_state, hub_url: str | None = None,
                 "text-xs text-gray-400 uppercase px-4"
             )
             refs["cultural_timeline_html"] = ui.html("", sanitize=False).classes(
-                "px-4 pb-3 text-xs text-gray-300 max-h-64 overflow-y-auto"
+                "px-4 pb-3 text-xs text-gray-300 max-h-64 overflow-y-auto ps-lore-panel"
             )
 
             ui.separator().classes("mx-4 mt-2 mb-2")
@@ -2380,7 +2380,7 @@ def build_monitor_page(app_state, hub_url: str | None = None,
                 "text-xs text-gray-400 uppercase px-4"
             )
             refs["cultural_memory_html"] = ui.html("", sanitize=False).classes(
-                "px-4 pb-4 text-sm text-gray-300"
+                "px-4 pb-4 text-sm text-gray-300 ps-lore-panel"
             )
 
         # ── Tab Mapa ──────────────────────────────────────────────────────────
@@ -2396,7 +2396,7 @@ def build_monitor_page(app_state, hub_url: str | None = None,
                 refs["layer_estructuras"] = ui.checkbox("Estructuras",      value=True).classes("text-xs text-yellow-200")
                 refs["layer_liminales"]   = ui.checkbox("Hexes liminales",  value=True).classes("text-xs text-purple-300")
                 refs["layer_fuego"]       = ui.checkbox("Fuego",            value=True).classes("text-xs text-red-400")
-            refs["hex_plot"] = ui.plotly(_dark_placeholder()).classes("w-full").style("height:82vh")
+            refs["hex_plot"] = ui.plotly(_dark_placeholder()).classes("w-full ps-map-plot").style("height:82vh")
 
         # ── Tab Liminal (C2/C3) ───────────────────────────────────────────────
         if app_state.use_liminal:
@@ -2413,7 +2413,7 @@ def build_monitor_page(app_state, hub_url: str | None = None,
                     ).classes("text-xs text-gray-500 font-mono")
 
                 # C2 — Mapa Plotly del mundo liminal
-                refs["lim_map"] = ui.plotly(_dark_placeholder()).classes("w-full px-2").style("height:52vh")
+                refs["lim_map"] = ui.plotly(_dark_placeholder()).classes("w-full px-2 ps-liminal-plot").style("height:52vh")
 
                 ui.separator().classes("mx-4 mt-2 mb-1")
 
@@ -2421,12 +2421,12 @@ def build_monitor_page(app_state, hub_url: str | None = None,
                     # C3 — Simulaciones conectadas
                     with ui.column().classes("gap-1 flex-1"):
                         ui.label("Simulaciones conectadas").classes("text-xs text-gray-400 uppercase")
-                        refs["lim_sims_html"] = ui.html("", sanitize=False).classes("text-xs text-gray-300")
+                        refs["lim_sims_html"] = ui.html("", sanitize=False).classes("text-xs text-gray-300 ps-lore-panel")
 
                     # C3 — Agentes en tránsito
                     with ui.column().classes("gap-1 flex-1"):
                         ui.label("Agentes en tránsito").classes("text-xs text-gray-400 uppercase")
-                        refs["lim_agents_html"] = ui.html("", sanitize=False).classes("text-xs text-gray-300")
+                        refs["lim_agents_html"] = ui.html("", sanitize=False).classes("text-xs text-gray-300 ps-lore-panel")
 
                 ui.separator().classes("mx-4 mt-2 mb-1")
 
