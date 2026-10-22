@@ -588,7 +588,7 @@ def _build_hex_map(
     n_tot = len(terrain_biomes)
     fig = go.Figure(data=traces)
     fig.update_layout(
-        paper_bgcolor="#1a0a2e", plot_bgcolor="#1a0a2e",
+        paper_bgcolor="#0b1523", plot_bgcolor="#0b1523",
         showlegend=True,
         legend=dict(font=dict(color="#ccc", size=10), bgcolor="rgba(0,0,0,0.5)",
                     itemsizing="constant"),
@@ -665,7 +665,7 @@ def _build_liminal_map(state: dict) -> "go.Figure | None":
 
     fig = go.Figure(data=traces)
     fig.update_layout(
-        paper_bgcolor="#04030f", plot_bgcolor="#04030f",
+        paper_bgcolor="#0b1523", plot_bgcolor="#0b1523",
         showlegend=True,
         legend=dict(font=dict(color="#aaa", size=9), bgcolor="rgba(0,0,0,0.5)"),
         margin=dict(l=0, r=0, t=24, b=0),
@@ -757,7 +757,7 @@ def _build_trend_panel(
 
     _ax = dict(color="#aaa", gridcolor="#1f2937")
     fig.update_layout(
-        paper_bgcolor="#111827", plot_bgcolor="#111827",
+        paper_bgcolor="#0b1523", plot_bgcolor="#0b1523",
         height=580,
         margin=dict(l=50, r=10, t=30, b=40),
         showlegend=True,
@@ -806,7 +806,7 @@ def _build_emergence_figure(rows: list[dict]) -> "go.Figure | None":
     fig = go.Figure(data=traces)
     fig.update_layout(
         title=dict(text="Métricas de emergencia cultural", font=dict(color="#ccc", size=13)),
-        paper_bgcolor="#111827", plot_bgcolor="#111827",
+        paper_bgcolor="#0b1523", plot_bgcolor="#0b1523",
         showlegend=True,
         legend=dict(font=dict(color="#aaa", size=10), orientation="h",
                     yanchor="bottom", y=1.02, xanchor="left", x=0),
@@ -879,7 +879,7 @@ def _build_icl_gauges(
         ))
 
     fig.update_layout(
-        paper_bgcolor="#111827",
+        paper_bgcolor="#0b1523",
         height=180,
         margin=dict(l=10, r=10, t=20, b=10),
         annotations=[dict(
@@ -918,7 +918,7 @@ def _build_icl_sparkline(history: "deque[dict]") -> "go.Figure | None":
         ))
     fig.update_layout(
         title=dict(text="Evolución de presiones del ICL", font=dict(color="#ccc", size=11)),
-        paper_bgcolor="#111827", plot_bgcolor="#111827",
+        paper_bgcolor="#0b1523", plot_bgcolor="#0b1523",
         height=160,
         margin=dict(l=40, r=10, t=30, b=30),
         xaxis=dict(color="#555", gridcolor="#1f2937", title="día"),
@@ -972,7 +972,7 @@ def _build_symbol_figure(symbols: dict, local_fields: dict | None = None):
         hovertext=tooltips, hoverinfo="text",
     ))
     fig.update_layout(
-        paper_bgcolor="#111827", plot_bgcolor="#111827",
+        paper_bgcolor="#0b1523", plot_bgcolor="#0b1523",
         margin=dict(l=130, r=60, t=10, b=20),
         xaxis=dict(range=[0, 1.15], color="#aaa", gridcolor="#1f2937"),
         yaxis=dict(color="#aaa"),
@@ -1191,7 +1191,7 @@ def _build_social_graph(cp: dict) -> "go.Figure | None":
     fig = go.Figure(data=traces)
     fig.update_layout(
         title=dict(text=stats_text, font=dict(color="#aaa", size=11)),
-        paper_bgcolor="#0a0014", plot_bgcolor="#0a0014",
+        paper_bgcolor="#0b1523", plot_bgcolor="#0b1523",
         showlegend=True,
         legend=dict(font=dict(color="#ccc", size=9), bgcolor="rgba(0,0,0,0.4)",
                     x=0.01, y=0.99),
@@ -1439,7 +1439,7 @@ def _build_dream_frequency_figure(cp: dict) -> "go.Figure | None":
     fig.update_layout(
         title=dict(text="Frecuencia arquetipos en sueños vs carga ICL",
                    font=dict(color="#ccc", size=12)),
-        paper_bgcolor="#111827", plot_bgcolor="#111827",
+        paper_bgcolor="#0b1523", plot_bgcolor="#0b1523",
         showlegend=True, legend=dict(font=dict(color="#aaa", size=9),
                                      orientation="h", y=1.12),
         margin=dict(l=40, r=40, t=55, b=50),
@@ -1858,7 +1858,7 @@ def _build_agent_radar(agent_data: dict) -> "go.Figure | None":
             radialaxis=dict(range=[0, 1], color="#555", gridcolor="#222", tickfont=dict(size=8)),
             angularaxis=dict(color="#888", gridcolor="#222", tickfont=dict(size=9)),
         ),
-        paper_bgcolor="#111827",
+        paper_bgcolor="#0b1523",
         showlegend=False,
         margin=dict(l=40, r=40, t=50, b=40),
         title=dict(
@@ -1876,8 +1876,8 @@ def _dark_placeholder() -> dict:
     return {
         "data": [],
         "layout": {
-            "paper_bgcolor": "#111827",
-            "plot_bgcolor":  "#111827",
+            "paper_bgcolor": "#0b1523",
+            "plot_bgcolor":  "#0b1523",
             "xaxis": {"color": "#333", "gridcolor": "#1a1a2e", "showgrid": True,
                       "showticklabels": False},
             "yaxis": {"color": "#333", "gridcolor": "#1a1a2e",
@@ -1889,7 +1889,7 @@ def _dark_placeholder() -> dict:
 
 def _mini_stat(title: str, value: str):
     from nicegui import ui
-    with ui.card().classes("p-4 bg-gray-800 text-white rounded-xl"):
+    with ui.card().classes("p-4 bg-gray-800 text-white rounded-xl ps-stat-card"):
         ui.label(title).classes("text-xs text-gray-400 uppercase tracking-wider mb-1")
         val = ui.label(value).classes("text-xl font-bold text-purple-300")
     return val
@@ -1902,7 +1902,7 @@ def _tension_bar(label: str, value: float, color_fn=None):
         color_fn = lambda v: "#e74c3c" if v > 0.7 else "#f39c12" if v > 0.4 else "#2ecc71"
     color = color_fn(value)
     w = int(value * 100)
-    with ui.card().classes("p-3 bg-gray-800 text-white rounded-xl"):
+    with ui.card().classes("p-3 bg-gray-800 text-white rounded-xl ps-stat-card ps-pressure-card"):
         ui.label(label).classes("text-xs text-gray-400 uppercase tracking-wider mb-1")
         val = ui.label(f"{value:.1%}").classes("text-lg font-bold").style(f"color:{color}")
         bar_ref = ui.html(
@@ -1976,10 +1976,10 @@ def build_monitor_page(app_state, hub_url: str | None = None,
     terrain_biomes = _extract_terrain(runner)
 
     # ── Header ────────────────────────────────────────────────────────────────
-    with ui.header().classes("bg-purple-950 text-white px-6 py-2 flex items-center gap-6"):
+    with ui.header().classes("bg-purple-950 text-white px-6 py-2 flex items-center gap-6 ps-monitor-header"):
         if hub_url:
             ui.link("← Panel", hub_url).classes("text-purple-200 text-sm no-underline")
-        ui.label("PSYCHE SIMULACRA").classes("text-lg font-bold tracking-widest")
+        ui.label("PSYCHE SIMULACRA").classes("text-lg font-bold tracking-widest ps-brand-mark")
         if titulo:
             ui.label(titulo).classes("text-sm text-purple-200 italic")
         refs_hdr: dict = {}
@@ -2055,7 +2055,7 @@ def build_monitor_page(app_state, hub_url: str | None = None,
             )
 
     # ── Tabs ──────────────────────────────────────────────────────────────────
-    with ui.tabs().classes("bg-purple-900 text-white w-full") as tabs:
+    with ui.tabs().classes("bg-purple-900 text-white w-full ps-monitor-tabs") as tabs:
         t_resumen    = ui.tab("Resumen")
         t_tendencias = ui.tab("Tendencias")
         t_icl        = ui.tab("ICL")
@@ -2069,7 +2069,7 @@ def build_monitor_page(app_state, hub_url: str | None = None,
 
     refs: dict = {}
 
-    with ui.tab_panels(tabs, value=t_resumen).classes("w-full bg-gray-900 flex-1"):
+    with ui.tab_panels(tabs, value=t_resumen).classes("w-full bg-gray-900 flex-1 ps-monitor-panels"):
 
         # ── Tab Resumen ───────────────────────────────────────────────────────
         with ui.tab_panel(t_resumen):
