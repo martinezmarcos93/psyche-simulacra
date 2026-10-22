@@ -20,6 +20,8 @@ datas = [
     (str(ROOT / "scripts" / "generate_personas.py"), "scripts"),
     # La muestra el panel en /guia
     (str(ROOT / "docs" / "GUIA_DE_USO.md"), "docs"),
+    # Ilustraciones del panel (se sirven en /assets)
+    (str(ROOT / "assets"), "assets"),
 ]
 datas += collect_data_files("nicegui")
 datas += collect_data_files("plotly")
