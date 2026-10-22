@@ -177,3 +177,4 @@ def apply_theme(ui) -> None:
     """Inyecta el tema en la página actual; seguro de invocar por página."""
     ui.add_head_html(f"<style id='psyche-simulacra-theme'>{THEME_CSS}</style>")
     ui.query("body").classes("bg-gray-950 text-gray-100")
+
