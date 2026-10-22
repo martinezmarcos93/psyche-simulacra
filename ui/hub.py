@@ -314,7 +314,7 @@ def _seccion_nueva(ui) -> None:
                                   label="Población inicial").classes("min-w-[240px]")
             semilla = ui.number("Semilla inicial", value=1, min=0, format="%d").classes("w-36")
             replicas = ui.number("Réplicas", value=1, min=1, max=100, format="%d").classes("w-28")
-            nombre = ui.input("Nombre de la tanda (opcional)").classes("flex-1 min-w-[200px]")
+            nombre = ui.input("Nombre de la tanda (opcional)").classes("flex-1 min-w-[200px] ps-run-name-field")
 
         with ui.expansion("Generar una población nueva", icon="group_add").classes("w-full ps-config-section"):
             ui.label("Crea un grupo de personas con perfiles psicológicos variados, distinto "
@@ -496,7 +496,9 @@ def _seccion_corridas(ui):
                  "de esa corrida en otra pestaña. Las demás siguen corriendo por detrás y "
                  "guardan todos sus datos en su carpeta.").classes("text-xs text-gray-400")
         tabla = ui.table(columns=columnas, rows=[], row_key="id", selection="multiple"
-                         ).classes("w-full").props("dark flat dense")
+                         ).classes("w-full ps-runs-table").props(
+                             'dark flat dense no-data-label="Todavía no hay corridas registradas."'
+                         )
         tabla.add_slot("body-cell-fase", r'''
             <q-td :props="props">
               <q-badge :color="props.row.color" :label="props.value" />
@@ -671,9 +673,11 @@ def _figura(ids: list[str]) -> dict:
             "yaxis2": {**eje, "title": {"text": "Tribus", "font": {"color": "#c6a2f2"}}},
             "legend": {"orientation": "h", "y": -0.15, "font": {"color": "#b8c5d8", "size": 11}},
             "annotations": [] if trazas else [{
-                "text": "Sin corridas seleccionadas", "showarrow": False,
-                "xref": "paper", "yref": "paper", "x": 0.5, "y": 0.5,
-                "font": {"color": "#6b7280"}}],
+                "text": "Seleccioná corridas en el registro para comparar personas vivas y tribus.",
+                "showarrow": False, "xref": "paper", "yref": "paper", "x": 0.5, "y": 0.5,
+                "font": {"color": "#b8c5d8", "size": 13},
+                "bgcolor": "rgba(16,28,44,.78)", "bordercolor": "rgba(59,80,106,.7)",
+                "borderpad": 10}],
         },
     }
 
