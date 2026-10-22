@@ -53,11 +53,6 @@ AYUDA_NATALIDAD = (
     "mínimo permite que la población se renueve."
 )
 
-_FASE_COLOR = {
-    "en_cola": "grey", "iniciando": "blue", "corriendo": "green", "pausada": "orange",
-    "deteniendo": "orange", "terminada": "purple", "extinta": "red-9",
-    "detenida": "brown", "error": "red", "interrumpida": "red-4",
-}
 _FASE_TEXTO = {
     "en_cola": "en cola", "iniciando": "iniciando", "corriendo": "corriendo",
     "pausada": "pausada", "deteniendo": "deteniendo", "terminada": "terminada",
@@ -268,12 +263,11 @@ def construir_panel() -> None:
 
     apply_theme(ui)
     with ui.header().classes("text-white items-center ps-main-header"):
-        ui.image("/assets/psyche-seal.svg").classes("ps-brand-seal")
-        ui.label("PSYCHE SIMULACRA").classes("text-xl font-bold tracking-widest ps-brand-mark")
-        ui.label("Laboratorio de sociedades simuladas").classes("text-sm ps-brand-subtitle")
+        ui.element("div").classes("ps-brand-seal")
+        ui.label("Psyche Simulacra").classes("ps-brand-mark")
+        ui.label("Laboratorio de sociedades simuladas").classes("ps-brand-subtitle")
         ui.space()
-        ui.label("El inconsciente colectivo emerge — no se construye.").classes("ps-header-motto")
-        ui.link("Guía de uso", "/guia", new_tab=True).classes("text-sm ps-guide-link")
+        ui.link("Guía de uso", "/guia", new_tab=True).classes("ps-guide-link")
 
     with ui.row().classes("w-full ps-app-layout no-wrap"):
         with ui.column().classes("ps-sidebar"):
@@ -281,8 +275,6 @@ def construir_panel() -> None:
             ui.link("▷  Corridas", "#ps-runs").classes("ps-nav-link")
             ui.link("▥  Comparar", "#ps-compare").classes("ps-nav-link")
             ui.link("❖  Guía de uso", "/guia", new_tab=True).classes("ps-nav-link")
-            ui.image("/assets/observatory-mandala.svg").classes("ps-sidebar-mandala")
-            ui.label("“Modelar para observar lo que siempre ha estado ahí.”").classes("ps-sidebar-quote")
         with ui.column().classes("w-full ps-page-shell"):
             with ui.row().classes("w-full ps-dashboard-top no-wrap"):
                 with ui.column().classes("ps-dashboard-main"):
@@ -308,7 +300,7 @@ def _seccion_estado_laboratorio(ui) -> None:
                 ("cola", "⧗", "En cola"),
                 ("terminadas", "■", "Terminadas"),
                 ("registradas", "▤", "Registradas"),
-                ("ollama", "✣", "Narrativa (Ollama)"),
+                ("ollama", "✣", "Narrativa IA"),
             ]:
                 with ui.row().classes("ps-status-row items-center no-wrap"):
                     ui.label(icono).classes("ps-status-icon")
@@ -364,9 +356,7 @@ def _seccion_nueva(ui) -> None:
     finos: dict[str, object] = {}
     with ui.card().classes("w-full bg-gray-900 text-gray-100 p-6 ps-hero-card").props("id=ps-nueva"):
         with ui.row().classes("w-full items-start justify-between ps-hero-heading-row"):
-            with ui.column().classes("gap-1"):
-                ui.label("DISEÑO DEL EXPERIMENTO").classes("ps-section-kicker")
-                ui.label("Nueva tanda de corridas").classes("text-lg font-semibold text-purple-200 ps-section-heading")
+            ui.label("Nueva tanda de corridas").classes("ps-section-heading")
         ui.label("Elegí uno o más escenarios. Cada escenario se corre una vez por réplica; "
                  "las réplicas usan semillas consecutivas, y el mismo número de semilla "
                  "significa el mismo mundo y la misma población inicial en todos los escenarios."
@@ -543,7 +533,7 @@ def _seccion_nueva(ui) -> None:
                       type="positive")
 
         ui.button("Lanzar", icon="play_arrow", on_click=_lanzar).props(
-            "color=purple-7").classes("mt-2 ps-launch-btn")
+            "unelevated no-caps").classes("mt-2 ps-launch-btn")
 
 
 def _seccion_corridas(ui):
@@ -558,9 +548,8 @@ def _seccion_corridas(ui):
         {"name": "acciones", "label": "", "field": "acciones"},
     ]
     with ui.card().classes("w-full bg-gray-900 text-gray-100 p-4 ps-runs-card").props("id=ps-runs"):
-        ui.label("REGISTRO DE EJECUCIONES").classes("ps-section-kicker")
         with ui.row().classes("w-full items-center"):
-            ui.label("Corridas").classes("text-lg font-semibold text-purple-200 ps-section-heading")
+            ui.label("Corridas").classes("ps-section-heading")
             ui.space()
             ui.button("Detener todas", icon="stop", on_click=lambda: _detener_todas(ui)).props(
                 "flat color=red-4")
@@ -573,20 +562,20 @@ def _seccion_corridas(ui):
                          )
         tabla.add_slot("body-cell-fase", r'''
             <q-td :props="props">
-              <q-badge :color="props.row.color" :label="props.value" />
+              <span :class="'ps-fase ps-fase--' + props.row.fase_clave">{{ props.value }}</span>
               <div v-if="props.row.error" class="text-red-4 text-caption">{{ props.row.error }}</div>
             </q-td>''')
         tabla.add_slot("body-cell-nombre", r'''
             <q-td :props="props">
-              <div>{{ props.value }}</div>
+              <div><span :class="'ps-esc ps-esc--' + props.row.escenario"></span>{{ props.value }}</div>
               <div class="text-grey-6 text-caption">{{ props.row.detalle }}</div>
             </q-td>''')
         tabla.add_slot("body-cell-acciones", r'''
             <q-td :props="props" class="q-gutter-xs">
-              <q-btn v-if="props.row.url" dense size="sm" color="purple-7" icon="visibility"
+              <q-btn v-if="props.row.url" dense unelevated size="sm" no-caps color="primary" icon="visibility" class="ps-accion"
                      label="Ver en vivo" :href="props.row.url" target="_blank" />
-              <q-btn v-if="!props.row.url && props.row.puede_ver_final" dense size="sm" outline
-                     color="purple-3" icon="visibility" label="Estado final"
+              <q-btn v-if="!props.row.url && props.row.puede_ver_final" dense size="sm" outline no-caps
+                     color="grey-5" icon="visibility" label="Estado final"
                      :href="'/visor/' + props.row.id" target="_blank" />
               <q-btn v-if="props.row.puede_detener" dense flat size="sm" color="red-4" icon="stop"
                      @click="$parent.$emit('detener', props.row.id)"><q-tooltip>Detener</q-tooltip></q-btn>
@@ -656,7 +645,8 @@ def _seccion_corridas(ui):
                     "nombre": cfg.nombre or d.name,
                     "detalle": cfg.resumen(),
                     "fase": _FASE_TEXTO.get(fase, fase),
-                    "color": _FASE_COLOR.get(fase, "grey"),
+                    "fase_clave": fase,
+                    "escenario": cfg.escenario,
                     "error": est.get("error"),
                     "dia": dia if dia is not None else "—",
                     "anios": f"{dia / 365:.1f}" if dia else "—",
@@ -689,8 +679,7 @@ def _detener_todas(ui) -> None:
 
 def _seccion_comparar(ui, tabla) -> None:
     with ui.card().classes("w-full bg-gray-900 text-gray-100 p-4 ps-compare-card").props("id=ps-compare"):
-        ui.label("ANÁLISIS COMPARATIVO").classes("ps-section-kicker")
-        ui.label("Comparar").classes("text-lg font-semibold text-purple-200 ps-section-heading")
+        ui.label("Comparar").classes("ps-section-heading")
         ui.label("Marcá corridas en la tabla de arriba para ver su población y sus tribus "
                  "a lo largo del tiempo.").classes("text-xs text-gray-400")
         graf = ui.plotly(_figura([])).classes("w-full ps-chart-frame").style("height:520px")
@@ -704,52 +693,58 @@ def _seccion_comparar(ui, tabla) -> None:
 
 
 def _figura(ids: list[str]) -> dict:
+    """Población y tribus de las corridas marcadas.
+
+    Cada línea lleva el color de su escenario; las réplicas de un mismo
+    escenario se distinguen por tono.
+    """
+    from ui import theme as T
+
     trazas = []
-    colores = ["#b68ae8", "#d6b16d", "#53c7b0", "#78a9e8", "#e98b9a", "#b7c77b"]
-    for i, rid in enumerate(ids):
-        color = colores[i % len(colores)]
+    usados: dict[str, int] = {}
+    for rid in ids:
         d = C.directorio_corridas() / rid
         if not d.is_dir():
             continue
         cfg = C.leer_config(d)
+        tonos = T.TONOS_ESCENARIO.get(cfg.escenario, [T.IRIS])
+        color = tonos[usados.get(cfg.escenario, 0) % len(tonos)]
+        usados[cfg.escenario] = usados.get(cfg.escenario, 0) + 1
         serie = C.leer_serie(d)
         x = [v / 365 for v in serie["dia"]]
         etiqueta = cfg.nombre or rid
         trazas.append({"type": "scatter", "mode": "lines", "x": x, "y": serie["n_alive"],
                        "name": etiqueta, "legendgroup": rid,
-                       "line": {"color": color, "width": 2.5},
+                       "line": {"color": color, "width": 2.2},
                        "xaxis": "x", "yaxis": "y"})
         trazas.append({"type": "scatter", "mode": "lines", "x": x, "y": serie["n_tribes"],
                        "name": etiqueta, "legendgroup": rid, "showlegend": False,
-                       "line": {"color": color, "dash": "dot", "width": 1.8},
+                       "line": {"color": color, "width": 1.6, "dash": "dot"},
                        "xaxis": "x2", "yaxis": "y2"})
     eje = {
-        "gridcolor": "rgba(111, 133, 163, 0.18)",
-        "zerolinecolor": "rgba(214, 177, 109, 0.28)",
-        "linecolor": "rgba(111, 133, 163, 0.28)",
-        "tickfont": {"color": "#91a2bb", "size": 11},
-        "title_font": {"color": "#c6a2f2", "size": 12},
+        "gridcolor": "rgba(139,151,170,.12)",
+        "zerolinecolor": "rgba(139,151,170,.25)",
+        "linecolor": T.RETICULA,
+        "tickfont": {"color": T.NIEBLA, "size": 11},
     }
+    titulo = lambda texto: {"text": texto, "font": {"color": T.NIEBLA, "size": 12}}  # noqa: E731
     return {
         "data": trazas,
         "layout": {
-            "paper_bgcolor": "#0b1523", "plot_bgcolor": "#0b1523",
-            "font": {"color": "#e5eaf4", "family": "Inter, Segoe UI, sans-serif", "size": 12},
-            "colorway": ["#b68ae8", "#d6b16d", "#53c7b0", "#78a9e8", "#e98b9a", "#b7c77b"],
-            "hoverlabel": {"bgcolor": "#19293f", "bordercolor": "#536a87", "font": {"color": "#e5eaf4"}},
-            "margin": {"l": 58, "r": 24, "t": 32, "b": 48},
+            **T.PLOTLY_LAYOUT,
+            "hoverlabel": {"bgcolor": T.PIZARRA_ALTA, "bordercolor": T.RETICULA,
+                           "font": {"color": T.TIZA, "family": T.FUENTE_UI}},
+            "margin": {"l": 58, "r": 16, "t": 24, "b": 48},
             "grid": {"rows": 2, "columns": 1, "pattern": "independent"},
-            "xaxis": {**eje, "title": {"text": "", "font": {"color": "#c6a2f2"}}},
-            "yaxis": {**eje, "title": {"text": "Personas vivas", "font": {"color": "#c6a2f2"}}},
-            "xaxis2": {**eje, "title": {"text": "Años simulados", "font": {"color": "#c6a2f2"}}},
-            "yaxis2": {**eje, "title": {"text": "Tribus", "font": {"color": "#c6a2f2"}}},
-            "legend": {"orientation": "h", "y": -0.15, "font": {"color": "#b8c5d8", "size": 11}},
+            "xaxis": {**eje, "title": titulo("")},
+            "yaxis": {**eje, "title": titulo("Personas vivas")},
+            "xaxis2": {**eje, "title": titulo("Años simulados")},
+            "yaxis2": {**eje, "title": titulo("Tribus (punteado)")},
+            "legend": {"orientation": "h", "y": -0.16, "font": {"color": T.TIZA, "size": 12}},
             "annotations": [] if trazas else [{
-                "text": "Seleccioná corridas en el registro para comparar personas vivas y tribus.",
+                "text": "Marcá corridas en la tabla para ver cómo evolucionan su población y sus tribus.",
                 "showarrow": False, "xref": "paper", "yref": "paper", "x": 0.5, "y": 0.5,
-                "font": {"color": "#b8c5d8", "size": 13},
-                "bgcolor": "rgba(16,28,44,.78)", "bordercolor": "rgba(59,80,106,.7)",
-                "borderpad": 10}],
+                "font": {"color": T.NIEBLA, "size": 13}}],
         },
     }
 
