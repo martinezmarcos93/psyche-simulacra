@@ -266,17 +266,65 @@ def _orden_texto(est: dict, cfg: C.CorridaConfig) -> str:
 def construir_panel() -> None:
     from nicegui import ui
 
+    app.add_static_files("/assets", str(ROOT / "assets"))
     apply_theme(ui)
-    with ui.header().classes("bg-purple-950 text-white px-6 py-3 items-center ps-main-header"):
+    with ui.header().classes("text-white items-center ps-main-header"):
+        ui.image("/assets/psyche-seal.svg").classes("ps-brand-seal")
         ui.label("PSYCHE SIMULACRA").classes("text-xl font-bold tracking-widest ps-brand-mark")
-        ui.label("Laboratorio de sociedades simuladas").classes("text-sm text-purple-300 ml-4 ps-brand-subtitle")
+        ui.label("Laboratorio de sociedades simuladas").classes("text-sm ps-brand-subtitle")
         ui.space()
-        ui.link("Guía de uso", "/guia", new_tab=True).classes("text-purple-200 text-sm")
+        ui.label("El inconsciente colectivo emerge — no se construye.").classes("ps-header-motto")
+        ui.link("Guía de uso", "/guia", new_tab=True).classes("text-sm ps-guide-link")
 
-    with ui.column().classes("w-full max-w-7xl mx-auto p-4 gap-6 ps-page-shell"):
-        _seccion_nueva(ui)
-        tabla = _seccion_corridas(ui)
-        _seccion_comparar(ui, tabla)
+    with ui.row().classes("w-full ps-app-layout no-wrap"):
+        with ui.column().classes("ps-sidebar"):
+            ui.link("▷  Corridas", "#ps-runs").classes("ps-nav-link ps-nav-active")
+            ui.link("◉  Observatorio", "#ps-observatory").classes("ps-nav-link")
+            ui.link("▥  Comparar", "#ps-compare").classes("ps-nav-link")
+            ui.link("▤  Archivo", "#ps-runs").classes("ps-nav-link")
+            ui.image("/assets/observatory-mandala.svg").classes("ps-sidebar-mandala")
+            ui.label("“Modelar para observar lo que siempre ha estado ahí.”").classes("ps-sidebar-quote")
+        with ui.column().classes("w-full ps-page-shell"):
+            with ui.row().classes("w-full ps-dashboard-top no-wrap"):
+                with ui.column().classes("ps-dashboard-main"):
+                    _seccion_nueva(ui)
+                _seccion_estado_laboratorio(ui)
+            with ui.row().classes("w-full ps-dashboard-bottom no-wrap"):
+                tabla = _seccion_corridas(ui)
+                _seccion_comparar(ui, tabla)
+
+
+def _seccion_estado_laboratorio(ui) -> None:
+    """Resumen lateral del estado efectivo del panel; no inicia ni modifica corridas."""
+    from nicegui import ui
+
+    dirs = C.listar_corridas()
+    activas = GESTOR.activas()
+    ollama = _ollama_estado()
+    ollama_texto = {"activo": "Funcionando", "instalado": "Instalado", "no_instalado": "No instalado"}[ollama]
+    with ui.card().classes("ps-lab-status-card"):
+        ui.label("⚙  Estado del laboratorio").classes("ps-lab-status-title")
+        with ui.column().classes("ps-status-list"):
+            for icono, nombre, estado, ok in [
+                ("⚙", "Motor de simulación", "Listo", True),
+                ("▤", "Registro de corridas", f"{len(dirs)} registradas", True),
+                ("✣", "Narrativa (Ollama)", ollama_texto, ollama == "activo"),
+            ]:
+                with ui.row().classes("ps-status-row items-center no-wrap"):
+                    ui.label(icono).classes("ps-status-icon")
+                    ui.label(nombre).classes("ps-status-name")
+                    ui.space()
+                    ui.label("●").classes("ps-status-dot " + ("is-ready" if ok else "is-idle"))
+                    ui.label(estado).classes("ps-status-value")
+        ui.separator()
+        with ui.row().classes("w-full items-center justify-between ps-active-runs"):
+            ui.label("Corridas activas").classes("ps-panel-title")
+            ui.label(f"{activas} / {GESTOR.max_paralelo}").classes("ps-active-count")
+        ui.label("Procesos de simulación en ejecución o inicialización.").classes("ps-status-caption")
+        ui.separator()
+        ui.label("Símbolo del observatorio").classes("ps-panel-title")
+        ui.image("/assets/observatory-mandala.svg").classes("ps-status-art")
+        ui.label("Mundo, mito y psicología: observación de sistemas emergentes.").classes("ps-status-caption")
 
 
 def _ajustes_finos(ui, seccion: str, destino: dict) -> None:
@@ -293,9 +341,12 @@ def _ajustes_finos(ui, seccion: str, destino: dict) -> None:
 def _seccion_nueva(ui) -> None:
     pobl = _poblaciones()
     finos: dict[str, object] = {}
-    with ui.card().classes("w-full bg-gray-900 text-gray-100 p-6 ps-hero-card"):
-        ui.label("DISEÑO DEL EXPERIMENTO").classes("ps-section-kicker")
-        ui.label("Nueva tanda de corridas").classes("text-lg font-semibold text-purple-200 ps-section-heading")
+    with ui.card().classes("w-full bg-gray-900 text-gray-100 p-6 ps-hero-card").props("id=ps-observatory"):
+        with ui.row().classes("w-full items-start justify-between ps-hero-heading-row"):
+            with ui.column().classes("gap-1"):
+                ui.label("DISEÑO DEL EXPERIMENTO").classes("ps-section-kicker")
+                ui.label("Nueva tanda de corridas").classes("text-lg font-semibold text-purple-200 ps-section-heading")
+            ui.button("Configurar rápido", icon="settings", on_click=lambda: ui.notify("Los parámetros avanzados están disponibles en cada sección.")).props("outline dense").classes("ps-quick-config")
         ui.label("Elegí uno o más escenarios. Cada escenario se corre una vez por réplica; "
                  "las réplicas usan semillas consecutivas, y el mismo número de semilla "
                  "significa el mismo mundo y la misma población inicial en todos los escenarios."
@@ -304,7 +355,8 @@ def _seccion_nueva(ui) -> None:
         esc_checks: dict[str, object] = {}
         with ui.row().classes("w-full gap-4 items-stretch ps-scenario-grid"):
             for clave, nombre in C.ESCENARIOS.items():
-                with ui.card().classes("flex-1 min-w-[220px] bg-gray-800 p-4 ps-scenario-card"):
+                scenario_asset = {"off": "ps-scenario-off", "orden": "ps-scenario-orden", "eden": "ps-scenario-eden"}.get(clave, "ps-scenario-generic")
+                with ui.card().classes(f"flex-1 min-w-[220px] bg-gray-800 p-4 ps-scenario-card {scenario_asset}"):
                     esc_checks[clave] = ui.checkbox(nombre, value=(clave == "off")).classes(
                         "font-semibold")
                     ui.label(C.ESCENARIOS_DESC[clave]).classes("text-xs text-gray-400 ps-scenario-description")
@@ -485,7 +537,7 @@ def _seccion_corridas(ui):
         {"name": "orden", "label": "Orden (Nomos)", "field": "orden", "align": "left"},
         {"name": "acciones", "label": "", "field": "acciones"},
     ]
-    with ui.card().classes("w-full bg-gray-900 text-gray-100 p-6 ps-runs-card"):
+    with ui.card().classes("w-full bg-gray-900 text-gray-100 p-4 ps-runs-card").props("id=ps-runs"):
         ui.label("REGISTRO DE EJECUCIONES").classes("ps-section-kicker")
         with ui.row().classes("w-full items-center"):
             ui.label("Corridas").classes("text-lg font-semibold text-purple-200 ps-section-heading")
@@ -616,7 +668,7 @@ def _detener_todas(ui) -> None:
 
 
 def _seccion_comparar(ui, tabla) -> None:
-    with ui.card().classes("w-full bg-gray-900 text-gray-100 p-6 ps-compare-card"):
+    with ui.card().classes("w-full bg-gray-900 text-gray-100 p-4 ps-compare-card").props("id=ps-compare"):
         ui.label("ANÁLISIS COMPARATIVO").classes("ps-section-kicker")
         ui.label("Comparar").classes("text-lg font-semibold text-purple-200 ps-section-heading")
         ui.label("Marcá corridas en la tabla de arriba para ver su población y sus tribus "
