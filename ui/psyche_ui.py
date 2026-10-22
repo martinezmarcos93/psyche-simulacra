@@ -1878,10 +1878,11 @@ def _dark_placeholder() -> dict:
         "layout": {
             "paper_bgcolor": "#0b1523",
             "plot_bgcolor":  "#0b1523",
-            "xaxis": {"color": "#333", "gridcolor": "#1a1a2e", "showgrid": True,
-                      "showticklabels": False},
-            "yaxis": {"color": "#333", "gridcolor": "#1a1a2e",
-                      "showticklabels": False},
+            "font": {"color": "#b8c5d8", "family": "Inter, Segoe UI, sans-serif", "size": 11},
+            "xaxis": {"color": "#91a2bb", "gridcolor": "rgba(111,133,163,.18)",
+                      "showgrid": True, "showticklabels": False, "zerolinecolor": "rgba(111,133,163,.18)"},
+            "yaxis": {"color": "#91a2bb", "gridcolor": "rgba(111,133,163,.18)",
+                      "showgrid": True, "showticklabels": False, "zerolinecolor": "rgba(111,133,163,.18)"},
             "margin": {"l": 10, "r": 10, "t": 10, "b": 10},
         },
     }
@@ -2073,12 +2074,12 @@ def build_monitor_page(app_state, hub_url: str | None = None,
 
         # ── Tab Resumen ───────────────────────────────────────────────────────
         with ui.tab_panel(t_resumen):
-            with ui.grid(columns=4).classes("w-full gap-4 p-4"):
+            with ui.grid(columns=4).classes("w-full gap-4 p-4 ps-summary-grid"):
                 refs["temp"]    = _mini_stat("Temperatura", "—")
                 refs["estac"]   = _mini_stat("Estación", "—")
                 refs["cc"]      = _mini_stat("Carrying capacity", "—")
                 refs["presion"] = _mini_stat("Presión recursos", "—")
-            with ui.grid(columns=3).classes("w-full gap-4 px-4 pb-4"):
+            with ui.grid(columns=3).classes("w-full gap-4 px-4 pb-4 ps-summary-grid--three"):
                 refs["humor"]    = _mini_stat("Humor promedio", "—")
                 refs["energia"]  = _mini_stat("Energía promedio", "—")
                 refs["ansiedad"] = _mini_stat("Ansiedad promedio", "—")
@@ -2087,7 +2088,7 @@ def build_monitor_page(app_state, hub_url: str | None = None,
             ui.label("Tensión colectiva global").classes(
                 "text-xs text-gray-400 uppercase px-4 pt-3"
             )
-            with ui.grid(columns=3).classes("w-full gap-4 px-4 pb-3"):
+            with ui.grid(columns=3).classes("w-full gap-4 px-4 pb-3 ps-summary-grid--three"):
                 refs["tension_emoc"], refs["tension_emoc_bar"] = _tension_bar("Presión emocional", 0.0)
                 refs["tension_mito"], refs["tension_mito_bar"] = _tension_bar("Presión mítica", 0.0)
                 refs["confusion"],    refs["confusion_bar"]    = _tension_bar("Confusión", 0.0)
@@ -2234,7 +2235,9 @@ def build_monitor_page(app_state, hub_url: str | None = None,
                 row_key="nombre",
                 pagination={"rowsPerPage": 25},
                 selection="single",
-            ).classes("w-full px-4 ps-agents-table")
+            ).classes("w-full px-4 ps-agents-table").props(
+                'no-data-label="No hay agentes disponibles en esta vista todavía."'
+            )
 
             # G1 — Dialog con radar arquetípico + D4 log episódico al hacer click en fila
             with ui.dialog() as radar_dialog, ui.card().classes(
