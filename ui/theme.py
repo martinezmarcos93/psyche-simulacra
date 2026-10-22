@@ -320,6 +320,65 @@ a:hover { color: var(--ps-violet-bright); }
 }
 .ps-lore-panel tr:hover td { background: rgba(154,93,224,.055); }
 .ps-lore-panel > div + div { border-top: 1px solid rgba(59,80,106,.26); }
+
+/* Phase 5: accessibility and final responsive polish */
+:focus-visible {
+  outline: 2px solid var(--ps-violet-bright) !important;
+  outline-offset: 3px;
+}
+.q-btn:focus-visible, .q-tab:focus-visible, .q-checkbox:focus-visible,
+.q-radio:focus-visible, .q-toggle:focus-visible, .q-item:focus-visible {
+  outline: 2px solid var(--ps-violet-bright) !important;
+  outline-offset: 2px;
+  z-index: 2;
+}
+.q-field--error .q-field__control:before,
+.q-field--error .q-field__control:after {
+  border-color: var(--ps-red) !important;
+}
+.q-field--error .q-field__bottom { color: var(--ps-red) !important; }
+.q-tooltip {
+  padding: 7px 10px !important;
+  color: var(--ps-text) !important;
+  background: #19293f !important;
+  border: 1px solid var(--ps-border-strong);
+  border-radius: 6px !important;
+  font-size: 12px !important;
+  box-shadow: 0 6px 18px rgba(0,0,0,.25);
+}
+.q-notification {
+  border: 1px solid var(--ps-border-strong);
+  border-radius: 8px !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,.25);
+}
+.q-table__bottom .q-btn:focus-visible,
+.q-table__bottom .q-btn:hover { color: var(--ps-violet-bright) !important; }
+.ps-lore-panel a { color: #c6a2f2; text-decoration-color: rgba(198,162,242,.5); }
+.ps-lore-panel a:hover { color: #e5d4ff; text-decoration-color: currentColor; }
+.ps-lore-panel code, .ps-monitor-panels code {
+  padding: 2px 5px;
+  border: 1px solid rgba(59,80,106,.55);
+  border-radius: 4px;
+  background: rgba(5,11,20,.6);
+  color: #d6b16d;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+@media (max-width: 760px) {
+  .q-card { border-radius: 8px !important; }
+  .q-table__container { max-width: 100%; }
+  .ps-monitor-panels .q-tab-panel { padding-inline: 4px; }
+  .ps-agent-dialog { max-height: 90vh; overflow-y: auto; }
+  .ps-agent-radar { min-width: 0 !important; }
+  .ps-lore-panel table { display: block; max-width: 100%; overflow-x: auto; }
+}
+
 @media (max-width: 760px) {
   .ps-map-plot, .ps-network-plot, .ps-liminal-plot { border-radius: 7px; }
   .ps-network-table table { min-width: 560px; }
