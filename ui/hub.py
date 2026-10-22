@@ -267,13 +267,13 @@ def construir_panel() -> None:
     from nicegui import ui
 
     apply_theme(ui)
-    with ui.header().classes("bg-purple-950 text-white px-6 py-3 items-center"):
-        ui.label("PSYCHE SIMULACRA").classes("text-xl font-bold tracking-widest")
-        ui.label("Laboratorio de sociedades simuladas").classes("text-sm text-purple-300 ml-4")
+    with ui.header().classes("bg-purple-950 text-white px-6 py-3 items-center ps-main-header"):
+        ui.label("PSYCHE SIMULACRA").classes("text-xl font-bold tracking-widest ps-brand-mark")
+        ui.label("Laboratorio de sociedades simuladas").classes("text-sm text-purple-300 ml-4 ps-brand-subtitle")
         ui.space()
         ui.link("Guía de uso", "/guia", new_tab=True).classes("text-purple-200 text-sm")
 
-    with ui.column().classes("w-full max-w-6xl mx-auto p-4 gap-6"):
+    with ui.column().classes("w-full max-w-7xl mx-auto p-4 gap-6 ps-page-shell"):
         _seccion_nueva(ui)
         tabla = _seccion_corridas(ui)
         _seccion_comparar(ui, tabla)
@@ -293,29 +293,30 @@ def _ajustes_finos(ui, seccion: str, destino: dict) -> None:
 def _seccion_nueva(ui) -> None:
     pobl = _poblaciones()
     finos: dict[str, object] = {}
-    with ui.card().classes("w-full bg-gray-900 text-gray-100 p-6"):
-        ui.label("Nueva tanda de corridas").classes("text-lg font-semibold text-purple-200")
+    with ui.card().classes("w-full bg-gray-900 text-gray-100 p-6 ps-hero-card"):
+        ui.label("DISEÑO DEL EXPERIMENTO").classes("ps-section-kicker")
+        ui.label("Nueva tanda de corridas").classes("text-lg font-semibold text-purple-200 ps-section-heading")
         ui.label("Elegí uno o más escenarios. Cada escenario se corre una vez por réplica; "
                  "las réplicas usan semillas consecutivas, y el mismo número de semilla "
                  "significa el mismo mundo y la misma población inicial en todos los escenarios."
-                 ).classes("text-sm text-gray-400 mb-2")
+                 ).classes("text-sm text-gray-400 mb-2 ps-section-description")
 
         esc_checks: dict[str, object] = {}
-        with ui.row().classes("w-full gap-4 items-stretch"):
+        with ui.row().classes("w-full gap-4 items-stretch ps-scenario-grid"):
             for clave, nombre in C.ESCENARIOS.items():
-                with ui.card().classes("flex-1 min-w-[220px] bg-gray-800 p-4"):
+                with ui.card().classes("flex-1 min-w-[220px] bg-gray-800 p-4 ps-scenario-card"):
                     esc_checks[clave] = ui.checkbox(nombre, value=(clave == "off")).classes(
                         "font-semibold")
-                    ui.label(C.ESCENARIOS_DESC[clave]).classes("text-xs text-gray-400")
+                    ui.label(C.ESCENARIOS_DESC[clave]).classes("text-xs text-gray-400 ps-scenario-description")
 
-        with ui.row().classes("w-full gap-4 mt-2 items-end"):
+        with ui.row().classes("w-full gap-4 mt-2 items-end ps-primary-fields"):
             poblacion = ui.select(pobl, value=next(iter(pobl), None),
                                   label="Población inicial").classes("min-w-[240px]")
             semilla = ui.number("Semilla inicial", value=1, min=0, format="%d").classes("w-36")
             replicas = ui.number("Réplicas", value=1, min=1, max=100, format="%d").classes("w-28")
             nombre = ui.input("Nombre de la tanda (opcional)").classes("flex-1 min-w-[200px]")
 
-        with ui.expansion("Generar una población nueva", icon="group_add").classes("w-full"):
+        with ui.expansion("Generar una población nueva", icon="group_add").classes("w-full ps-config-section"):
             ui.label("Crea un grupo de personas con perfiles psicológicos variados, distinto "
                      "según la semilla. Queda disponible en «Población inicial».").classes(
                 "text-xs text-gray-400")
@@ -336,7 +337,7 @@ def _seccion_nueva(ui) -> None:
 
                 ui.button("Generar", icon="add", on_click=_generar).props("outline")
 
-        with ui.row().classes("w-full gap-4 items-end"):
+        with ui.row().classes("w-full gap-4 items-end ps-duration-row"):
             duracion = ui.radio({"ext": "Hasta la extinción", "dias": "Cantidad de días"},
                                 value="dias").props("inline dark")
             dias = ui.number("Días", value=365, min=1, format="%d").classes("w-32") \
@@ -345,7 +346,7 @@ def _seccion_nueva(ui) -> None:
                 "text-xs text-gray-500").bind_visibility_from(duracion, "value", value="ext")
 
         mec: dict[str, object] = {}
-        with ui.expansion("Mecanismos psicológicos", icon="psychology").classes("w-full"):
+        with ui.expansion("Mecanismos psicológicos", icon="psychology").classes("w-full ps-config-section"):
             ui.label("Vienen apagados: el modelo base funciona sin ellos.").classes(
                 "text-xs text-gray-500")
             for clave, titulo, ayuda in MECANISMOS:
@@ -355,7 +356,7 @@ def _seccion_nueva(ui) -> None:
             _ajustes_finos(ui, "Mecanismos psicológicos", finos)
 
         defaults = C.CorridaConfig()
-        with ui.expansion("Natalidad", icon="child_care").classes("w-full"):
+        with ui.expansion("Natalidad", icon="child_care").classes("w-full ps-config-section"):
             ui.label(AYUDA_NATALIDAD).classes("text-xs text-gray-400")
             with ui.row().classes("gap-4"):
                 prob = ui.number("Probabilidad diaria de concebir", value=defaults.prob_repro_diaria,
@@ -367,15 +368,15 @@ def _seccion_nueva(ui) -> None:
                                 min=0, max=1, step=0.05, format="%.2f").classes("w-64")
             _ajustes_finos(ui, "Natalidad", finos)
 
-        with ui.expansion("Orden y Serpiente", icon="balance").classes("w-full"):
+        with ui.expansion("Orden y Serpiente", icon="balance").classes("w-full ps-config-section"):
             _ajustes_finos(ui, "Orden y Serpiente", finos)
 
-        with ui.expansion("Mundo, cultura y mito", icon="public").classes("w-full"):
+        with ui.expansion("Mundo, cultura y mito", icon="public").classes("w-full ps-config-section"):
             _ajustes_finos(ui, "Mundo", finos)
             _ajustes_finos(ui, "Cultura y mito", finos)
 
         estado_ollama = _ollama_estado()
-        with ui.expansion("Narrativa con IA", icon="auto_stories").classes("w-full"):
+        with ui.expansion("Narrativa con IA", icon="auto_stories").classes("w-full ps-config-section"):
             ui.label("Genera crónicas, elegías y leyendas en texto con un modelo de lenguaje "
                      "local (Ollama). Hace la corrida mucho más lenta y no cambia la simulación."
                      ).classes("text-xs text-gray-400")
@@ -394,7 +395,7 @@ def _seccion_nueva(ui) -> None:
             if estado_ollama == "no_instalado":
                 narr.disable()
 
-        with ui.expansion("Avanzado", icon="tune").classes("w-full"):
+        with ui.expansion("Avanzado", icon="tune").classes("w-full ps-config-section"):
             with ui.row().classes("gap-4 items-end"):
                 clus = ui.number("Días hasta formar tribus", value=defaults.dias_hasta_clustering,
                                  min=1, format="%d").classes("w-56")
@@ -409,7 +410,7 @@ def _seccion_nueva(ui) -> None:
                 lim_port = ui.number("Puerto", value=8765, min=1024, max=65534,
                                      format="%d").classes("w-28").bind_visibility_from(lim, "value")
 
-        resumen = ui.label("").classes("text-sm text-purple-200 mt-2")
+        resumen = ui.label("").classes("text-sm text-purple-200 mt-2 ps-run-summary")
 
         def _escenarios() -> list[str]:
             return [k for k, cb in esc_checks.items() if cb.value]
@@ -470,7 +471,7 @@ def _seccion_nueva(ui) -> None:
                       type="positive")
 
         ui.button("Lanzar", icon="play_arrow", on_click=_lanzar).props(
-            "color=purple-7").classes("mt-2")
+            "color=purple-7").classes("mt-2 ps-launch-btn")
 
 
 def _seccion_corridas(ui):
@@ -484,9 +485,10 @@ def _seccion_corridas(ui):
         {"name": "orden", "label": "Orden (Nomos)", "field": "orden", "align": "left"},
         {"name": "acciones", "label": "", "field": "acciones"},
     ]
-    with ui.card().classes("w-full bg-gray-900 text-gray-100 p-6"):
+    with ui.card().classes("w-full bg-gray-900 text-gray-100 p-6 ps-runs-card"):
+        ui.label("REGISTRO DE EJECUCIONES").classes("ps-section-kicker")
         with ui.row().classes("w-full items-center"):
-            ui.label("Corridas").classes("text-lg font-semibold text-purple-200")
+            ui.label("Corridas").classes("text-lg font-semibold text-purple-200 ps-section-heading")
             ui.space()
             ui.button("Detener todas", icon="stop", on_click=lambda: _detener_todas(ui)).props(
                 "flat color=red-4")
@@ -612,11 +614,12 @@ def _detener_todas(ui) -> None:
 
 
 def _seccion_comparar(ui, tabla) -> None:
-    with ui.card().classes("w-full bg-gray-900 text-gray-100 p-6"):
-        ui.label("Comparar").classes("text-lg font-semibold text-purple-200")
+    with ui.card().classes("w-full bg-gray-900 text-gray-100 p-6 ps-compare-card"):
+        ui.label("ANÁLISIS COMPARATIVO").classes("ps-section-kicker")
+        ui.label("Comparar").classes("text-lg font-semibold text-purple-200 ps-section-heading")
         ui.label("Marcá corridas en la tabla de arriba para ver su población y sus tribus "
                  "a lo largo del tiempo.").classes("text-xs text-gray-400")
-        graf = ui.plotly(_figura([])).classes("w-full").style("height:520px")
+        graf = ui.plotly(_figura([])).classes("w-full ps-chart-frame").style("height:520px")
 
         def _actualizar() -> None:
             ids = [r["id"] for r in (tabla.selected or [])]
