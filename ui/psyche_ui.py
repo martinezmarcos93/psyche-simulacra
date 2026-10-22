@@ -2234,7 +2234,7 @@ def build_monitor_page(app_state, hub_url: str | None = None,
                 row_key="nombre",
                 pagination={"rowsPerPage": 25},
                 selection="single",
-             ).classes("w-full px-4 ps-agents-table")
+            ).classes("w-full px-4 ps-agents-table")
 
             # G1 — Dialog con radar arquetípico + D4 log episódico al hacer click en fila
             with ui.dialog() as radar_dialog, ui.card().classes(
