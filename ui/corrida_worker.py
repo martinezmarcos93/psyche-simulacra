@@ -258,8 +258,11 @@ def _ver_estado_final(d: Path, cfg, C, puerto: int, hub_url: str) -> None:
 
 def _servir_monitor(app_state, cfg, puerto: int, hub_url: str, d: Path, C,
                     titulo: str | None = None, detener: bool = True) -> None:
-    from nicegui import ui
+    from nicegui import app, ui
     from ui.psyche_ui import build_monitor_page
+
+    # Fuentes e ilustraciones del tema
+    app.add_static_files("/assets", str(ROOT / "assets"))
 
     @ui.page("/")
     def monitor():

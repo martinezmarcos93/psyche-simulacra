@@ -24,6 +24,7 @@ import urllib.request
 from pathlib import Path
 
 from core.runtime import corridas as C
+from ui.theme import apply_theme
 
 ROOT = Path(__file__).resolve().parent.parent
 HUB_PORT = int(os.environ.get("PSYCHE_HUB_PORT", "8080"))
@@ -52,11 +53,6 @@ AYUDA_NATALIDAD = (
     "mínimo permite que la población se renueve."
 )
 
-_FASE_COLOR = {
-    "en_cola": "grey", "iniciando": "blue", "corriendo": "green", "pausada": "orange",
-    "deteniendo": "orange", "terminada": "purple", "extinta": "red-9",
-    "detenida": "brown", "error": "red", "interrumpida": "red-4",
-}
 _FASE_TEXTO = {
     "en_cola": "en cola", "iniciando": "iniciando", "corriendo": "corriendo",
     "pausada": "pausada", "deteniendo": "deteniendo", "terminada": "terminada",
@@ -265,17 +261,83 @@ def _orden_texto(est: dict, cfg: C.CorridaConfig) -> str:
 def construir_panel() -> None:
     from nicegui import ui
 
-    ui.query("body").classes("bg-gray-950")
-    with ui.header().classes("bg-purple-950 text-white px-6 py-3 items-center"):
-        ui.label("PSYCHE SIMULACRA").classes("text-xl font-bold tracking-widest")
-        ui.label("Laboratorio de sociedades simuladas").classes("text-sm text-purple-300 ml-4")
+    apply_theme(ui)
+    with ui.header().classes("text-white items-center ps-main-header"):
+        ui.element("div").classes("ps-brand-seal")
+        ui.label("Psyche Simulacra").classes("ps-brand-mark")
+        ui.label("Laboratorio de sociedades simuladas").classes("ps-brand-subtitle")
         ui.space()
-        ui.link("Guía de uso", "/guia", new_tab=True).classes("text-purple-200 text-sm")
+        ui.link("Guía de uso", "/guia", new_tab=True).classes("ps-guide-link")
 
-    with ui.column().classes("w-full max-w-6xl mx-auto p-4 gap-6"):
-        _seccion_nueva(ui)
-        tabla = _seccion_corridas(ui)
-        _seccion_comparar(ui, tabla)
+    with ui.row().classes("w-full ps-app-layout no-wrap"):
+        with ui.column().classes("ps-sidebar"):
+            ui.link("✦  Nueva tanda", "#ps-nueva").classes("ps-nav-link")
+            ui.link("▷  Corridas", "#ps-runs").classes("ps-nav-link")
+            ui.link("▥  Comparar", "#ps-compare").classes("ps-nav-link")
+            ui.link("❖  Guía de uso", "/guia", new_tab=True).classes("ps-nav-link")
+        with ui.column().classes("w-full ps-page-shell"):
+            with ui.row().classes("w-full ps-dashboard-top no-wrap"):
+                with ui.column().classes("ps-dashboard-main"):
+                    _seccion_nueva(ui)
+                _seccion_estado_laboratorio(ui)
+            tabla = _seccion_corridas(ui)
+            _seccion_comparar(ui, tabla)
+
+
+def _seccion_estado_laboratorio(ui) -> None:
+    """Resumen lateral del estado real del laboratorio (se refresca solo).
+
+    Solo lee: no inicia ni modifica corridas.
+    """
+    from nicegui import ui
+
+    filas: dict[str, tuple] = {}
+    with ui.card().classes("ps-lab-status-card"):
+        ui.label("Estado del laboratorio").classes("ps-lab-status-title")
+        with ui.column().classes("ps-status-list"):
+            for clave, icono, nombre in [
+                ("corriendo", "▶", "En curso"),
+                ("cola", "⧗", "En cola"),
+                ("terminadas", "■", "Terminadas"),
+                ("registradas", "▤", "Registradas"),
+                ("ollama", "✣", "Narrativa IA"),
+            ]:
+                with ui.row().classes("ps-status-row items-center no-wrap"):
+                    ui.label(icono).classes("ps-status-icon")
+                    ui.label(nombre).classes("ps-status-name")
+                    ui.space()
+                    punto = ui.label("●").classes("ps-status-dot")
+                    valor = ui.label("—").classes("ps-status-value")
+                filas[clave] = (punto, valor)
+        ui.separator()
+        with ui.row().classes("w-full items-center justify-between ps-active-runs"):
+            ui.label("Corridas simultáneas").classes("ps-panel-title")
+            activas_lbl = ui.label("—").classes("ps-active-count")
+        ui.label("En curso sobre el máximo permitido (se cambia en Avanzado).").classes(
+            "ps-status-caption")
+
+    def _poner(clave: str, texto: str, ok: bool | None) -> None:
+        punto, valor = filas[clave]
+        valor.set_text(texto)
+        punto.classes(remove="is-ready is-idle is-off",
+                      add={True: "is-ready", False: "is-off", None: "is-idle"}[ok])
+
+    def _refrescar() -> None:
+        fases = [GESTOR.estado(d).get("fase") for d in C.listar_corridas()]
+        activas = sum(1 for f in fases if f in C.FASES_ACTIVAS)
+        _poner("corriendo", str(activas), True if activas else None)
+        en_cola = sum(1 for f in fases if f == "en_cola")
+        _poner("cola", str(en_cola), None)
+        _poner("terminadas", str(sum(1 for f in fases if f in C.FASES_FINALES)), None)
+        _poner("registradas", str(len(fases)), None)
+        ollama = _ollama_estado()
+        _poner("ollama", {"activo": "Funcionando", "instalado": "Instalado",
+                          "no_instalado": "No instalado"}[ollama],
+               {"activo": True, "instalado": None, "no_instalado": False}[ollama])
+        activas_lbl.set_text(f"{activas} / {GESTOR.max_paralelo}")
+
+    _refrescar()
+    ui.timer(3.0, _refrescar)
 
 
 def _ajustes_finos(ui, seccion: str, destino: dict) -> None:
@@ -292,29 +354,31 @@ def _ajustes_finos(ui, seccion: str, destino: dict) -> None:
 def _seccion_nueva(ui) -> None:
     pobl = _poblaciones()
     finos: dict[str, object] = {}
-    with ui.card().classes("w-full bg-gray-900 text-gray-100 p-6"):
-        ui.label("Nueva tanda de corridas").classes("text-lg font-semibold text-purple-200")
+    with ui.card().classes("w-full bg-gray-900 text-gray-100 p-6 ps-hero-card").props("id=ps-nueva"):
+        with ui.row().classes("w-full items-start justify-between ps-hero-heading-row"):
+            ui.label("Nueva tanda de corridas").classes("ps-section-heading")
         ui.label("Elegí uno o más escenarios. Cada escenario se corre una vez por réplica; "
                  "las réplicas usan semillas consecutivas, y el mismo número de semilla "
                  "significa el mismo mundo y la misma población inicial en todos los escenarios."
-                 ).classes("text-sm text-gray-400 mb-2")
+                 ).classes("text-sm text-gray-400 mb-2 ps-section-description")
 
         esc_checks: dict[str, object] = {}
-        with ui.row().classes("w-full gap-4 items-stretch"):
+        with ui.row().classes("w-full gap-4 items-stretch ps-scenario-grid"):
             for clave, nombre in C.ESCENARIOS.items():
-                with ui.card().classes("flex-1 min-w-[220px] bg-gray-800 p-4"):
+                scenario_asset = {"off": "ps-scenario-off", "orden": "ps-scenario-orden", "eden": "ps-scenario-eden"}.get(clave, "ps-scenario-generic")
+                with ui.card().classes(f"flex-1 min-w-[220px] bg-gray-800 p-4 ps-scenario-card {scenario_asset}"):
                     esc_checks[clave] = ui.checkbox(nombre, value=(clave == "off")).classes(
                         "font-semibold")
-                    ui.label(C.ESCENARIOS_DESC[clave]).classes("text-xs text-gray-400")
+                    ui.label(C.ESCENARIOS_DESC[clave]).classes("text-xs text-gray-400 ps-scenario-description")
 
-        with ui.row().classes("w-full gap-4 mt-2 items-end"):
+        with ui.row().classes("w-full gap-4 mt-2 items-end ps-primary-fields"):
             poblacion = ui.select(pobl, value=next(iter(pobl), None),
                                   label="Población inicial").classes("min-w-[240px]")
             semilla = ui.number("Semilla inicial", value=1, min=0, format="%d").classes("w-36")
             replicas = ui.number("Réplicas", value=1, min=1, max=100, format="%d").classes("w-28")
-            nombre = ui.input("Nombre de la tanda (opcional)").classes("flex-1 min-w-[200px]")
+            nombre = ui.input("Nombre de la tanda (opcional)").classes("flex-1 min-w-[200px] ps-run-name-field")
 
-        with ui.expansion("Generar una población nueva", icon="group_add").classes("w-full"):
+        with ui.expansion("Generar una población nueva", icon="group_add").classes("w-full ps-config-section"):
             ui.label("Crea un grupo de personas con perfiles psicológicos variados, distinto "
                      "según la semilla. Queda disponible en «Población inicial».").classes(
                 "text-xs text-gray-400")
@@ -335,7 +399,7 @@ def _seccion_nueva(ui) -> None:
 
                 ui.button("Generar", icon="add", on_click=_generar).props("outline")
 
-        with ui.row().classes("w-full gap-4 items-end"):
+        with ui.row().classes("w-full gap-4 items-end ps-duration-row"):
             duracion = ui.radio({"ext": "Hasta la extinción", "dias": "Cantidad de días"},
                                 value="dias").props("inline dark")
             dias = ui.number("Días", value=365, min=1, format="%d").classes("w-32") \
@@ -344,7 +408,7 @@ def _seccion_nueva(ui) -> None:
                 "text-xs text-gray-500").bind_visibility_from(duracion, "value", value="ext")
 
         mec: dict[str, object] = {}
-        with ui.expansion("Mecanismos psicológicos", icon="psychology").classes("w-full"):
+        with ui.expansion("Mecanismos psicológicos", icon="psychology").classes("w-full ps-config-section"):
             ui.label("Vienen apagados: el modelo base funciona sin ellos.").classes(
                 "text-xs text-gray-500")
             for clave, titulo, ayuda in MECANISMOS:
@@ -354,7 +418,7 @@ def _seccion_nueva(ui) -> None:
             _ajustes_finos(ui, "Mecanismos psicológicos", finos)
 
         defaults = C.CorridaConfig()
-        with ui.expansion("Natalidad", icon="child_care").classes("w-full"):
+        with ui.expansion("Natalidad", icon="child_care").classes("w-full ps-config-section"):
             ui.label(AYUDA_NATALIDAD).classes("text-xs text-gray-400")
             with ui.row().classes("gap-4"):
                 prob = ui.number("Probabilidad diaria de concebir", value=defaults.prob_repro_diaria,
@@ -366,15 +430,15 @@ def _seccion_nueva(ui) -> None:
                                 min=0, max=1, step=0.05, format="%.2f").classes("w-64")
             _ajustes_finos(ui, "Natalidad", finos)
 
-        with ui.expansion("Orden y Serpiente", icon="balance").classes("w-full"):
+        with ui.expansion("Orden y Serpiente", icon="balance").classes("w-full ps-config-section"):
             _ajustes_finos(ui, "Orden y Serpiente", finos)
 
-        with ui.expansion("Mundo, cultura y mito", icon="public").classes("w-full"):
+        with ui.expansion("Mundo, cultura y mito", icon="public").classes("w-full ps-config-section"):
             _ajustes_finos(ui, "Mundo", finos)
             _ajustes_finos(ui, "Cultura y mito", finos)
 
         estado_ollama = _ollama_estado()
-        with ui.expansion("Narrativa con IA", icon="auto_stories").classes("w-full"):
+        with ui.expansion("Narrativa con IA", icon="auto_stories").classes("w-full ps-config-section"):
             ui.label("Genera crónicas, elegías y leyendas en texto con un modelo de lenguaje "
                      "local (Ollama). Hace la corrida mucho más lenta y no cambia la simulación."
                      ).classes("text-xs text-gray-400")
@@ -393,7 +457,7 @@ def _seccion_nueva(ui) -> None:
             if estado_ollama == "no_instalado":
                 narr.disable()
 
-        with ui.expansion("Avanzado", icon="tune").classes("w-full"):
+        with ui.expansion("Avanzado", icon="tune").classes("w-full ps-config-section"):
             with ui.row().classes("gap-4 items-end"):
                 clus = ui.number("Días hasta formar tribus", value=defaults.dias_hasta_clustering,
                                  min=1, format="%d").classes("w-56")
@@ -408,7 +472,7 @@ def _seccion_nueva(ui) -> None:
                 lim_port = ui.number("Puerto", value=8765, min=1024, max=65534,
                                      format="%d").classes("w-28").bind_visibility_from(lim, "value")
 
-        resumen = ui.label("").classes("text-sm text-purple-200 mt-2")
+        resumen = ui.label("").classes("text-sm text-purple-200 mt-2 ps-run-summary")
 
         def _escenarios() -> list[str]:
             return [k for k, cb in esc_checks.items() if cb.value]
@@ -469,7 +533,7 @@ def _seccion_nueva(ui) -> None:
                       type="positive")
 
         ui.button("Lanzar", icon="play_arrow", on_click=_lanzar).props(
-            "color=purple-7").classes("mt-2")
+            "unelevated no-caps").classes("mt-2 ps-launch-btn")
 
 
 def _seccion_corridas(ui):
@@ -483,9 +547,9 @@ def _seccion_corridas(ui):
         {"name": "orden", "label": "Orden (Nomos)", "field": "orden", "align": "left"},
         {"name": "acciones", "label": "", "field": "acciones"},
     ]
-    with ui.card().classes("w-full bg-gray-900 text-gray-100 p-6"):
+    with ui.card().classes("w-full bg-gray-900 text-gray-100 p-4 ps-runs-card").props("id=ps-runs"):
         with ui.row().classes("w-full items-center"):
-            ui.label("Corridas").classes("text-lg font-semibold text-purple-200")
+            ui.label("Corridas").classes("ps-section-heading")
             ui.space()
             ui.button("Detener todas", icon="stop", on_click=lambda: _detener_todas(ui)).props(
                 "flat color=red-4")
@@ -493,23 +557,25 @@ def _seccion_corridas(ui):
                  "de esa corrida en otra pestaña. Las demás siguen corriendo por detrás y "
                  "guardan todos sus datos en su carpeta.").classes("text-xs text-gray-400")
         tabla = ui.table(columns=columnas, rows=[], row_key="id", selection="multiple"
-                         ).classes("w-full").props("dark flat dense")
+                         ).classes("w-full ps-runs-table").props(
+                             'dark flat dense no-data-label="Todavía no hay corridas registradas."'
+                         )
         tabla.add_slot("body-cell-fase", r'''
             <q-td :props="props">
-              <q-badge :color="props.row.color" :label="props.value" />
+              <span :class="'ps-fase ps-fase--' + props.row.fase_clave">{{ props.value }}</span>
               <div v-if="props.row.error" class="text-red-4 text-caption">{{ props.row.error }}</div>
             </q-td>''')
         tabla.add_slot("body-cell-nombre", r'''
             <q-td :props="props">
-              <div>{{ props.value }}</div>
+              <div><span :class="'ps-esc ps-esc--' + props.row.escenario"></span>{{ props.value }}</div>
               <div class="text-grey-6 text-caption">{{ props.row.detalle }}</div>
             </q-td>''')
         tabla.add_slot("body-cell-acciones", r'''
             <q-td :props="props" class="q-gutter-xs">
-              <q-btn v-if="props.row.url" dense size="sm" color="purple-7" icon="visibility"
+              <q-btn v-if="props.row.url" dense unelevated size="sm" no-caps color="primary" icon="visibility" class="ps-accion"
                      label="Ver en vivo" :href="props.row.url" target="_blank" />
-              <q-btn v-if="!props.row.url && props.row.puede_ver_final" dense size="sm" outline
-                     color="purple-3" icon="visibility" label="Estado final"
+              <q-btn v-if="!props.row.url && props.row.puede_ver_final" dense size="sm" outline no-caps
+                     color="grey-5" icon="visibility" label="Estado final"
                      :href="'/visor/' + props.row.id" target="_blank" />
               <q-btn v-if="props.row.puede_detener" dense flat size="sm" color="red-4" icon="stop"
                      @click="$parent.$emit('detener', props.row.id)"><q-tooltip>Detener</q-tooltip></q-btn>
@@ -579,7 +645,8 @@ def _seccion_corridas(ui):
                     "nombre": cfg.nombre or d.name,
                     "detalle": cfg.resumen(),
                     "fase": _FASE_TEXTO.get(fase, fase),
-                    "color": _FASE_COLOR.get(fase, "grey"),
+                    "fase_clave": fase,
+                    "escenario": cfg.escenario,
                     "error": est.get("error"),
                     "dia": dia if dia is not None else "—",
                     "anios": f"{dia / 365:.1f}" if dia else "—",
@@ -611,11 +678,11 @@ def _detener_todas(ui) -> None:
 
 
 def _seccion_comparar(ui, tabla) -> None:
-    with ui.card().classes("w-full bg-gray-900 text-gray-100 p-6"):
-        ui.label("Comparar").classes("text-lg font-semibold text-purple-200")
+    with ui.card().classes("w-full bg-gray-900 text-gray-100 p-4 ps-compare-card").props("id=ps-compare"):
+        ui.label("Comparar").classes("ps-section-heading")
         ui.label("Marcá corridas en la tabla de arriba para ver su población y sus tribus "
                  "a lo largo del tiempo.").classes("text-xs text-gray-400")
-        graf = ui.plotly(_figura([])).classes("w-full").style("height:520px")
+        graf = ui.plotly(_figura([])).classes("w-full ps-chart-frame").style("height:520px")
 
         def _actualizar() -> None:
             ids = [r["id"] for r in (tabla.selected or [])]
@@ -626,35 +693,58 @@ def _seccion_comparar(ui, tabla) -> None:
 
 
 def _figura(ids: list[str]) -> dict:
+    """Población y tribus de las corridas marcadas.
+
+    Cada línea lleva el color de su escenario; las réplicas de un mismo
+    escenario se distinguen por tono.
+    """
+    from ui import theme as T
+
     trazas = []
-    for i, rid in enumerate(ids):
+    usados: dict[str, int] = {}
+    for rid in ids:
         d = C.directorio_corridas() / rid
         if not d.is_dir():
             continue
         cfg = C.leer_config(d)
+        tonos = T.TONOS_ESCENARIO.get(cfg.escenario, [T.IRIS])
+        color = tonos[usados.get(cfg.escenario, 0) % len(tonos)]
+        usados[cfg.escenario] = usados.get(cfg.escenario, 0) + 1
         serie = C.leer_serie(d)
         x = [v / 365 for v in serie["dia"]]
         etiqueta = cfg.nombre or rid
         trazas.append({"type": "scatter", "mode": "lines", "x": x, "y": serie["n_alive"],
-                       "name": etiqueta, "legendgroup": rid, "xaxis": "x", "yaxis": "y"})
+                       "name": etiqueta, "legendgroup": rid,
+                       "line": {"color": color, "width": 2.2},
+                       "xaxis": "x", "yaxis": "y"})
         trazas.append({"type": "scatter", "mode": "lines", "x": x, "y": serie["n_tribes"],
                        "name": etiqueta, "legendgroup": rid, "showlegend": False,
-                       "line": {"dash": "dot"}, "xaxis": "x2", "yaxis": "y2"})
-    eje = {"gridcolor": "#2d2d3a", "zerolinecolor": "#2d2d3a"}
+                       "line": {"color": color, "width": 1.6, "dash": "dot"},
+                       "xaxis": "x2", "yaxis": "y2"})
+    eje = {
+        "gridcolor": "rgba(139,151,170,.12)",
+        "zerolinecolor": "rgba(139,151,170,.25)",
+        "linecolor": T.RETICULA,
+        "tickfont": {"color": T.NIEBLA, "size": 11},
+    }
+    titulo = lambda texto: {"text": texto, "font": {"color": T.NIEBLA, "size": 12}}  # noqa: E731
     return {
         "data": trazas,
         "layout": {
-            "paper_bgcolor": "#111827", "plot_bgcolor": "#111827",
-            "font": {"color": "#d1d5db"},
-            "margin": {"l": 50, "r": 20, "t": 30, "b": 40},
+            **T.PLOTLY_LAYOUT,
+            "hoverlabel": {"bgcolor": T.PIZARRA_ALTA, "bordercolor": T.RETICULA,
+                           "font": {"color": T.TIZA, "family": T.FUENTE_UI}},
+            "margin": {"l": 58, "r": 16, "t": 24, "b": 48},
             "grid": {"rows": 2, "columns": 1, "pattern": "independent"},
-            "xaxis": {**eje, "title": ""}, "yaxis": {**eje, "title": "Personas vivas"},
-            "xaxis2": {**eje, "title": "Años simulados"}, "yaxis2": {**eje, "title": "Tribus"},
-            "legend": {"orientation": "h", "y": -0.15},
+            "xaxis": {**eje, "title": titulo("")},
+            "yaxis": {**eje, "title": titulo("Personas vivas")},
+            "xaxis2": {**eje, "title": titulo("Años simulados")},
+            "yaxis2": {**eje, "title": titulo("Tribus (punteado)")},
+            "legend": {"orientation": "h", "y": -0.16, "font": {"color": T.TIZA, "size": 12}},
             "annotations": [] if trazas else [{
-                "text": "Sin corridas seleccionadas", "showarrow": False,
-                "xref": "paper", "yref": "paper", "x": 0.5, "y": 0.5,
-                "font": {"color": "#6b7280"}}],
+                "text": "Marcá corridas en la tabla para ver cómo evolucionan su población y sus tribus.",
+                "showarrow": False, "xref": "paper", "yref": "paper", "x": 0.5, "y": 0.5,
+                "font": {"color": T.NIEBLA, "size": 13}}],
         },
     }
 
@@ -699,13 +789,15 @@ def construir_visor(rid: str) -> None:
 def lanzar_panel() -> None:
     from nicegui import app, ui
 
+    app.add_static_files("/assets", str(ROOT / "assets"))
+
     @ui.page("/")
     def panel():
         construir_panel()
 
     @ui.page("/guia")
     def guia():
-        ui.query("body").classes("bg-gray-950")
+        apply_theme(ui)
         texto = (ROOT / "docs" / "GUIA_DE_USO.md").read_text(encoding="utf-8")
         with ui.column().classes("w-full max-w-4xl mx-auto p-6 text-gray-200"):
             ui.markdown(texto, extras=["tables"]).classes("w-full")
