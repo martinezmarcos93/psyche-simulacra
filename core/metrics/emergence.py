@@ -89,6 +89,17 @@ class DayMetrics:
     # ventanee automáticamente el antes/después sin buscar el día del evento
     # a mano (ver docs/experiments/, AgentCore.eden_event tiene el detalle).
     nomos_active: bool = True
+    # ── Contadores de flujo (core/metrics/flujos.py; detalle por tribu en
+    # tribe_flows.csv). Los completa SimulationRunner después de compute_day. ──
+    nacimientos: int = 0
+    muertes_vejez: int = 0
+    muertes_carencia: int = 0           # hambre, sed, orfandad
+    muertes_violentas: int = 0          # depredadores (no hay violencia entre agentes)
+    muertes_catastrofe: int = 0
+    muertes_otras: int = 0              # liminales y no clasificadas
+    cambios_de_tribu: int = 0           # migraciones reales (no cambios de ID al reclusterizar)
+    tribus_nuevas: int = 0
+    tribus_extintas: int = 0
 
 
 class EmergenceMetrics:

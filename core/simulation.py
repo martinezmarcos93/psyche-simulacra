@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import atexit
+import dataclasses
 import json
 import os
 import sys
@@ -12,6 +13,7 @@ from core.world import WorldCore
 from core.agents import AgentCore
 from core.narrative.narrator import NarratorEngine
 from core.metrics import EmergenceMetrics, MetricsExporter
+from core.metrics.flujos import ContadorFlujos, mapeo_vivos
 from core.metrics.exporter import _DEFAULT_DIR as _METRICS_DIR
 from persistence import DatabaseManager, WriteBuffer, CheckpointManager, SessionLog
 from obsidian.sync import ObsidianSync
@@ -52,6 +54,7 @@ class SimulationRunner:
         self.narrator           = NarratorEngine(vault_path=vault_path)
         self.emergence_metrics  = EmergenceMetrics()
         self.metrics_exporter   = MetricsExporter()
+        self.contador_flujos    = ContadorFlujos()
 
         self._last_cp_dia:  int = -1
         self._death_cursor: int = 0
@@ -116,6 +119,14 @@ class SimulationRunner:
             self._prev_myth_keys.clear()
             self._death_cursor = 0
             self._last_cp_dia  = -1
+            # Lo ocurrido en la prehistoria no cuenta como flujo del día 1.
+            self._sincronizar_flujos()
+
+    def _sincronizar_flujos(self) -> None:
+        self.contador_flujos.sincronizar(
+            mapeo_vivos(self.agents.agents, self.agents.tribe_manager),
+            self.agents.birth_log, self.agents.death_log,
+        )
 
     # ── Persistencia per-tick y per-día ──────────────────────────────────────
 
@@ -171,6 +182,12 @@ class SimulationRunner:
             culture_engine=self.agents.culture_engine,
             nomos=self.agents.nomos,
         )
+        flujo = self.contador_flujos.registrar_dia(
+            dia, mapeo_vivos(self.agents.agents, self.agents.tribe_manager),
+            self.agents.birth_log, self.agents.death_log,
+        )
+        day_m = dataclasses.replace(day_m, **flujo.columnas())
+        self.metrics_exporter.record_tribus(flujo.por_tribu)
         self.metrics_exporter.record(day_m)
         if dia % 10 == 0:
             self.metrics_exporter.flush()
@@ -526,6 +543,7 @@ class SimulationRunner:
         dia_inicio = data.get("dia_simulado", 0)
         runner._last_cp_dia  = dia_inicio
         runner._death_cursor = len(runner.agents.death_log)
+        runner._sincronizar_flujos()
         runner.session.start(
             dia_inicio = dia_inicio,
             session_id = data.get("session_id"),

@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .emergence import DayMetrics
+    from .flujos import FlujoTribu
 
 _DEFAULT_DIR = "data/metrics"
 _FLUSH_EVERY = 10   # días entre flushes automáticos
@@ -18,29 +19,30 @@ class MetricsExporter:
     Persiste las métricas de emergencia en disco.
     - Serie temporal: data/metrics/emergence_series.csv
     - Resumen agregado: data/metrics/emergence_summary.json
+    - Flujos por tribu: data/metrics/tribe_flows.csv (una fila por día y tribu)
     """
 
     def __init__(self, output_dir: str = _DEFAULT_DIR) -> None:
         self._dir      = Path(output_dir)
         self._dir.mkdir(parents=True, exist_ok=True)
         self._csv_path = self._dir / "emergence_series.csv"
+        self._tribus_path = self._dir / "tribe_flows.csv"
         self._buffer:  list[DayMetrics] = []
-        self._headers_written = self._csv_path.exists() and self._csv_path.stat().st_size > 0
+        self._buffer_tribus: list[FlujoTribu] = []
+
+    def record_tribus(self, filas: "list[FlujoTribu]") -> None:
+        self._buffer_tribus.extend(filas)
 
     def record(self, metrics: "DayMetrics") -> None:
         self._buffer.append(metrics)
 
     def flush(self) -> None:
-        if not self._buffer:
-            return
-        rows = [asdict(m) for m in self._buffer]
-        with open(self._csv_path, "a", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=rows[0].keys())
-            if not self._headers_written:
-                writer.writeheader()
-                self._headers_written = True
-            writer.writerows(rows)
-        self._buffer.clear()
+        if self._buffer:
+            _anexar(self._csv_path, [asdict(m) for m in self._buffer])
+            self._buffer.clear()
+        if self._buffer_tribus:
+            _anexar(self._tribus_path, [asdict(f) for f in self._buffer_tribus])
+            self._buffer_tribus.clear()
 
     def export_summary(self) -> Path | None:
         """Genera emergence_summary.json con estadísticas agregadas de toda la serie."""
@@ -82,3 +84,20 @@ class MetricsExporter:
         with open(out, "w", encoding="utf-8") as f:
             json.dump(summary, f, indent=2, ensure_ascii=False)
         return out
+
+
+def _anexar(path: Path, rows: list[dict]) -> None:
+    """
+    Agrega filas a un CSV. Si el archivo ya existe (corrida reanudada desde un checkpoint
+    de una versión anterior) respeta su encabezado: las columnas nuevas se descartan en
+    vez de desalinear la serie.
+    """
+    encabezado: list[str] | None = None
+    if path.exists() and path.stat().st_size > 0:
+        with open(path, encoding="utf-8", newline="") as f:
+            encabezado = next(csv.reader(f), None)
+    with open(path, "a", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=encabezado or list(rows[0].keys()), extrasaction="ignore")
+        if not encabezado:
+            writer.writeheader()
+        writer.writerows(rows)

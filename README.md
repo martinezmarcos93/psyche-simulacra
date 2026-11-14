@@ -157,7 +157,8 @@ Lectura del mito del Edén trasladada al modelo: una fuerza ordenadora organiza 
 - **Tribus reales vs. aislados** — `n_tribes_multi` (tribus de ≥2 miembros) y `n_isolates` (agentes sin vínculos fuertes, que el clustering cuenta como tribu de uno); `behavioral_kl_multi_mean` controla ese sesgo
 - **`reorganizations_total`** (recalibración) y **`nomos_active`** (EDEN)
 - **Divergencia conductual/de campo (inter-tribu) e idiosincrasia (intra-tribu)** — `behavioral_kl_mean`/`field_kl_mean` miden qué tan distinto actúan y sienten las tribus entre sí; `behavioral_intra_tribe_dispersion` mide la variación de conducta dentro de cada tribu — instrumento pensado para la Ecuación Personal (ver `docs/experiments/`)
-- Exportación automática a `data/metrics/emergence_series.csv` y `emergence_summary.json`
+- **Contadores de flujo** (`core/metrics/flujos.py`, idea de WorldBox) — por día: `nacimientos`, muertes por categoría (`muertes_vejez`, `muertes_carencia`, `muertes_violentas` = depredadores, `muertes_catastrofe`, `muertes_otras`), `cambios_de_tribu`, `tribus_nuevas` y `tribus_extintas`. Un cambio de ID de tribu al reclusterizar no cuenta como migración: cada tribu nueva hereda de la anterior con la que más integrantes comparte. Detalle por tribu en `tribe_flows.csv`
+- Exportación automática a `data/metrics/emergence_series.csv`, `tribe_flows.csv` y `emergence_summary.json`
 - `scripts/run_robustness.py` — suite de N ejecuciones con semillas distintas, salida JSON con KL/VFE/IMI/MIG
 - `scripts/plot_emergence.py` — genera PNG con 6 gráficas automáticas (KL, MIG, IMI, VFE, MIG vs tribus, supervivencia)
 
@@ -295,6 +296,7 @@ psyche-simulacra/
 │   ├── checkpoints/                  Estados JSON guardados
 │   ├── metrics/                      Series temporales de emergencia
 │   │   ├── emergence_series.csv
+│   │   ├── tribe_flows.csv           Flujos por día y tribu
 │   │   └── emergence_summary.json
 │   ├── corridas/                     Una carpeta por corrida del panel (no versionada)
 │   ├── poblaciones/                  Poblaciones generadas desde el panel (no versionada)
