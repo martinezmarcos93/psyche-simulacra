@@ -1,26 +1,24 @@
 # Punto de control
 
 <!-- PUNTO-DE-CONTROL -->
-**Actualizado:** 2026-11-13
+**Actualizado:** 2026-11-14
 
-**Tarea actual:** punto 2 de `docs/proposals/2026-11-10-worldbox-ideas-aplicables.md`
-(contadores de flujo por tribu), elegido por Marcos el 13/11. Implementado en
-`core/metrics/flujos.py` + columnas nuevas en `DayMetrics` + `tribe_flows.csv`;
-tests en `tests/test_flujos.py`. Suite completa 574 passed (13/11); commiteado y
-pusheado a `main`. Detalle en `docs/handoffs/2026-11-13.md`.
+**Tarea actual:** cerrados los pendientes del 13/11 (detalle en `docs/handoffs/2026-11-14.md`):
+flujos en el panel, bug de muertes de la prehistoria, paleta del mapa y la red, natalidad
+(causa raíz: fatiga crónica por abstinencia; nuevo ajuste `REPRO_FATIGA_MAX`).
 
-**Próximo paso:** mostrar los flujos en el panel multicorrida (`ui/hub.py`, hoy solo
-grafica `n_alive` y `n_tribes`); después, punto 3 (intervenciones programadas).
+**Próximo paso:** que Marcos decida (1) defaults de natalidad, (2) si mergea la rama
+`ui/laboratorio-fenomenos` (worktree `~/src/psyche-laboratorio`, rebase antes), (3) qué
+entra del mapa según `docs/proposals/2026-11-14-mapa-observatorio-revision.md`.
+Después: punto 3 de la propuesta WorldBox (intervenciones programadas).
 
 **Pendientes:**
-- Probar el instalador en un Windows real (`packaging\build.bat`).
-- Pasar a la paleta del tema los colores propios del mapa (biomas) y de la red social.
-- Natalidad casi nula con los valores por defecto: decidir valores recomendados.
-- Decidir si la entrega al sociólogo lleva narrativa (Ollama) o no (hoy viene apagada).
-- Revisar: tras la prehistoria `_death_cursor` vuelve a 0, así que las muertes de la
-  prehistoria podrían registrarse en la BD el día 1 (los flujos no tienen ese problema).
+- Probar el instalador en un Windows real (`packaginguild.bat`).
+- Modelo de adicción: la abstinencia sin techo agota a toda la población (decisión de modelo).
+- Narrativa en la entrega al sociólogo: recomendado apagada (ya es el default).
 
 **Bloqueos:** ninguno.
 
-**Notas:** suite completa ~30 min con `PYTHONHASHSEED=0`; no hay CI en GitHub.
+**Notas:** suite completa ~35–45 min con `PYTHONHASHSEED=0`; no hay CI en GitHub.
+`scripts/calibrar_natalidad.py`: con 100 personas, ~1 año simulado cada 20–25 min.
 <!-- /PUNTO-DE-CONTROL -->
