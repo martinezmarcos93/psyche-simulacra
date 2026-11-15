@@ -51,6 +51,10 @@ PARAMETROS_FINOS: list[tuple[str, str, str, str, float, float, float, float, boo
     ("REPRO_COOLDOWN_DIAS", "Natalidad", "Días de descanso tras un nacimiento",
      "Cuánto espera cada progenitor antes de poder volver a tener un hijo.",
      180, 0, 3650, 10, True),
+    ("REPRO_FATIGA_MAX", "Natalidad", "Cansancio máximo para concebir",
+     "Por encima de este cansancio nadie concibe. Quien tiene abstinencia de alguna "
+     "sustancia vive cansado: con 0.5 casi toda la población adulta queda afuera.",
+     0.5, 0.0, 1.0, 0.05, False),
     ("LETHALITY_FACTOR", "Mundo", "Letalidad de las catástrofes",
      "1 = normal. Menos de 1: mueren menos personas, pero el trauma simbólico "
      "de los sobrevivientes es mayor.", 1.0, 0.0, 3.0, 0.1, False),

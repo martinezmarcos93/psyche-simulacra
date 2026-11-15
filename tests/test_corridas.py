@@ -365,3 +365,11 @@ def test_detener_una_corrida(datos):
     finally:
         p.kill()
         p.wait(timeout=10)
+
+
+def test_cansancio_maximo_para_concebir_es_ajustable():
+    env = C.CorridaConfig().entorno()
+    assert float(env["REPRO_FATIGA_MAX"]) == 0.5          # por defecto, el motor no cambia
+    env = C.CorridaConfig(ajustes={"REPRO_FATIGA_MAX": 0.85}).entorno()
+    assert float(env["REPRO_FATIGA_MAX"]) == 0.85
+    assert C.CorridaConfig(ajustes={"REPRO_FATIGA_MAX": 1.5}).validar()

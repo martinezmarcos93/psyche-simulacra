@@ -128,6 +128,9 @@ _EDAD_MAX_REPRO       = 45
 _PROB_REPRO_DIARIA    = float(os.environ.get("PROB_REPRO_DIARIA",    "0.007"))
 _COOLDOWN_REPRO       = int(os.environ.get(  "REPRO_COOLDOWN_DIAS",  "180"))
 _REPRO_NEEDS_MAX      = float(os.environ.get("REPRO_NEEDS_MAX",      "0.45"))  # hambre/sed
+# Cansancio máximo para concebir. Se evalúa a medianoche (on_day), cuando la fatiga
+# del día está alta; la abstinencia de sustancias la vuelve crónica (ver docs).
+_REPRO_FATIGA_MAX     = float(os.environ.get("REPRO_FATIGA_MAX",     "0.5"))
 _LIMITE_POBLACION     = 150    # máximo de agentes simultáneos
 
 
@@ -2612,7 +2615,7 @@ class AgentCore:
                 continue
             if not (_EDAD_MIN_REPRO <= a.edad <= _EDAD_MAX_REPRO):
                 continue
-            if a.needs.hambre >= _REPRO_NEEDS_MAX or a.needs.sed >= _REPRO_NEEDS_MAX or a.needs.fatiga >= 0.5:
+            if a.needs.hambre >= _REPRO_NEEDS_MAX or a.needs.sed >= _REPRO_NEEDS_MAX or a.needs.fatiga >= _REPRO_FATIGA_MAX:
                 continue
 
             for b in alive[i + 1:]:
@@ -2622,7 +2625,7 @@ class AgentCore:
                     continue
                 if not (_EDAD_MIN_REPRO <= b.edad <= _EDAD_MAX_REPRO):
                     continue
-                if b.needs.hambre >= _REPRO_NEEDS_MAX or b.needs.sed >= _REPRO_NEEDS_MAX or b.needs.fatiga >= 0.5:
+                if b.needs.hambre >= _REPRO_NEEDS_MAX or b.needs.sed >= _REPRO_NEEDS_MAX or b.needs.fatiga >= _REPRO_FATIGA_MAX:
                     continue
                 if self.social_network.get_bond(a.id, b.id) < _BOND_REPRODUCCION:
                     continue
