@@ -117,7 +117,7 @@ class SimulationRunner:
             self._prev_tribe_ids.clear()
             self._last_cronica_dia.clear()
             self._prev_myth_keys.clear()
-            self._death_cursor = 0
+            self._death_cursor = len(self.agents.death_log)  # las muertes previas no van a la BD
             self._last_cp_dia  = -1
             # Lo ocurrido en la prehistoria no cuenta como flujo del día 1.
             self._sincronizar_flujos()
