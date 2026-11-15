@@ -24,7 +24,7 @@ import urllib.request
 from pathlib import Path
 
 from core.runtime import corridas as C
-from ui.theme import apply_theme
+from ui.theme import MODO_OBSERVACION as T_MODO_OBSERVACION, apply_theme
 
 ROOT = Path(__file__).resolve().parent.parent
 HUB_PORT = int(os.environ.get("PSYCHE_HUB_PORT", "8080"))
@@ -266,16 +266,17 @@ def construir_panel() -> None:
     with ui.header().classes("text-white items-center ps-main-header"):
         ui.element("div").classes("ps-brand-seal")
         ui.label("Psyche Simulacra").classes("ps-brand-mark")
-        ui.label("Laboratorio de sociedades simuladas").classes("ps-brand-subtitle")
+        ui.label("Observatorio experimental").classes("ps-brand-subtitle")
         ui.space()
+        ui.html(T_MODO_OBSERVACION).classes("ps-modo-observacion")
         ui.link("Guía de uso", "/guia", new_tab=True).classes("ps-guide-link")
 
     with ui.row().classes("w-full ps-app-layout no-wrap"):
         with ui.column().classes("ps-sidebar"):
-            ui.link("✦  Nueva tanda", "#ps-nueva").classes("ps-nav-link")
-            ui.link("▷  Corridas", "#ps-runs").classes("ps-nav-link")
-            ui.link("▥  Comparar", "#ps-compare").classes("ps-nav-link")
-            ui.link("❖  Guía de uso", "/guia", new_tab=True).classes("ps-nav-link")
+            ui.link("Protocolo", "#ps-nueva").classes("ps-nav-link")
+            ui.link("Corridas", "#ps-runs").classes("ps-nav-link")
+            ui.link("Comparar", "#ps-compare").classes("ps-nav-link")
+            ui.link("Guía de uso", "/guia", new_tab=True).classes("ps-nav-link")
         with ui.column().classes("w-full ps-page-shell"):
             with ui.row().classes("w-full ps-dashboard-top no-wrap"):
                 with ui.column().classes("ps-dashboard-main"):
@@ -357,7 +358,7 @@ def _seccion_nueva(ui) -> None:
     finos: dict[str, object] = {}
     with ui.card().classes("w-full bg-gray-900 text-gray-100 p-6 ps-hero-card").props("id=ps-nueva"):
         with ui.row().classes("w-full items-start justify-between ps-hero-heading-row"):
-            ui.label("Nueva tanda de corridas").classes("ps-section-heading")
+            ui.label("Protocolo · nueva tanda de corridas").classes("ps-section-heading")
         ui.label("Elegí uno o más escenarios. Cada escenario se corre una vez por réplica; "
                  "las réplicas usan semillas consecutivas, y el mismo número de semilla "
                  "significa el mismo mundo y la misma población inicial en todos los escenarios."
@@ -379,7 +380,7 @@ def _seccion_nueva(ui) -> None:
             replicas = ui.number("Réplicas", value=1, min=1, max=100, format="%d").classes("w-28")
             nombre = ui.input("Nombre de la tanda (opcional)").classes("flex-1 min-w-[200px] ps-run-name-field")
 
-        with ui.expansion("Generar una población nueva", icon="group_add").classes("w-full ps-config-section"):
+        with ui.expansion("Generar una población nueva", icon="group_add").classes("w-full ps-config-section ps-herramienta"):
             ui.label("Crea un grupo de personas con perfiles psicológicos variados, distinto "
                      "según la semilla. Queda disponible en «Población inicial».").classes(
                 "text-xs text-gray-400")

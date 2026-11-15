@@ -1983,6 +1983,7 @@ def build_monitor_page(app_state, hub_url: str | None = None,
             ui.link("← Panel", hub_url).classes("text-purple-200 text-sm no-underline")
         ui.element("div").classes("ps-brand-seal")
         ui.label("Psyche Simulacra").classes("ps-brand-mark")
+        ui.label("Observatorio · corrida").classes("ps-ruta")
         if titulo:
             ui.label(titulo).classes("text-sm text-purple-200 italic")
         refs_hdr: dict = {}
@@ -1991,6 +1992,7 @@ def build_monitor_page(app_state, hub_url: str | None = None,
             refs_hdr["vivos"]  = ui.label("Agentes —").classes("text-green-300 text-sm")
             refs_hdr["tribus"] = ui.label("Tribus —").classes("text-blue-300 text-sm")
             refs_hdr["estado"] = ui.badge("—", color="grey").classes("text-xs")
+        ui.html(T.MODO_OBSERVACION).classes("ps-modo-observacion")
 
         # Control de velocidad de simulación
         _SPEED_LABELS = ["MAX", "×20", "×5", "×1", "Paso"]
@@ -2059,6 +2061,7 @@ def build_monitor_page(app_state, hub_url: str | None = None,
 
     # ── Tabs ──────────────────────────────────────────────────────────────────
     with ui.tabs().classes("bg-purple-900 text-white w-full ps-monitor-tabs") as tabs:
+        t_mapa       = ui.tab("Mundo")
         t_resumen    = ui.tab("Resumen")
         t_tendencias = ui.tab("Tendencias")
         t_icl        = ui.tab("ICL")
@@ -2066,13 +2069,12 @@ def build_monitor_page(app_state, hub_url: str | None = None,
         t_agentes    = ui.tab("Agentes")
         t_suenos     = ui.tab("Sueños")
         t_civiliz    = ui.tab("Civilización")
-        t_mapa       = ui.tab("Mapa")
         if app_state.use_liminal:
             t_liminal = ui.tab("Zona Liminal")
 
     refs: dict = {}
 
-    with ui.tab_panels(tabs, value=t_resumen).classes("w-full bg-gray-900 flex-1 ps-monitor-panels"):
+    with ui.tab_panels(tabs, value=t_mapa).classes("w-full bg-gray-900 flex-1 ps-monitor-panels"):
 
         # ── Tab Resumen ───────────────────────────────────────────────────────
         with ui.tab_panel(t_resumen):
@@ -2390,18 +2392,22 @@ def build_monitor_page(app_state, hub_url: str | None = None,
 
         # ── Tab Mapa ──────────────────────────────────────────────────────────
         with ui.tab_panel(t_mapa):
-            # D3 — Panel de control de capas
-            with ui.row().classes("px-4 py-2 gap-6 flex-wrap items-center"):
-                ui.label("Capas:").classes("text-xs text-gray-400 font-semibold")
-                refs["layer_niebla"]      = ui.checkbox("Niebla de guerra", value=True).classes("text-xs text-gray-300")
-                refs["layer_agentes"]     = ui.checkbox("Agentes",          value=True).classes("text-xs text-green-300")
-                refs["layer_muertos"]     = ui.checkbox("Muertos",          value=True).classes("text-xs text-gray-500")
-                refs["layer_tumbas"]      = ui.checkbox("Tumbas",           value=True).classes("text-xs text-gray-300")
-                refs["layer_fauna"]       = ui.checkbox("Fauna simbólica",  value=True).classes("text-xs text-yellow-300")
-                refs["layer_estructuras"] = ui.checkbox("Estructuras",      value=True).classes("text-xs text-yellow-200")
-                refs["layer_liminales"]   = ui.checkbox("Hexes liminales",  value=True).classes("text-xs text-purple-300")
-                refs["layer_fuego"]       = ui.checkbox("Fuego",            value=True).classes("text-xs text-red-400")
-            refs["hex_plot"] = ui.plotly(_dark_placeholder()).classes("w-full ps-map-plot").style("height:82vh")
+            # El mundo es el objeto observado: ocupa ~70 % y las capas quedan al costado.
+            with ui.row().classes("w-full no-wrap items-start ps-mundo"):
+                refs["hex_plot"] = ui.plotly(_dark_placeholder()).classes("ps-map-plot ps-mundo-mapa").style("height:82vh")
+                # D3 — Panel de control de capas
+                with ui.column().classes("ps-mundo-capas gap-1"):
+                    ui.label("Capas").classes("ps-instrumento-rotulo")
+                    refs["layer_niebla"]      = ui.checkbox("Niebla de guerra", value=True).classes("text-xs text-gray-300")
+                    refs["layer_agentes"]     = ui.checkbox("Agentes",          value=True).classes("text-xs text-green-300")
+                    refs["layer_muertos"]     = ui.checkbox("Muertos",          value=True).classes("text-xs text-gray-500")
+                    refs["layer_tumbas"]      = ui.checkbox("Tumbas",           value=True).classes("text-xs text-gray-300")
+                    refs["layer_fauna"]       = ui.checkbox("Fauna simbólica",  value=True).classes("text-xs text-yellow-300")
+                    refs["layer_estructuras"] = ui.checkbox("Estructuras",      value=True).classes("text-xs text-yellow-200")
+                    refs["layer_liminales"]   = ui.checkbox("Hexes liminales",  value=True).classes("text-xs text-purple-300")
+                    refs["layer_fuego"]       = ui.checkbox("Fuego",            value=True).classes("text-xs text-red-400")
+                    ui.label("Lectura: solo se dibuja lo que la simulación produjo.").classes(
+                        "ps-instrumento-nota")
 
         # ── Tab Liminal (C2/C3) ───────────────────────────────────────────────
         if app_state.use_liminal:
