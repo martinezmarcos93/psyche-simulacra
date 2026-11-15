@@ -509,6 +509,17 @@ a:hover { color: #B3A8FF; }
 .ps-lore-panel td { padding: 7px 10px; border-bottom: 1px solid var(--reticula-suave); vertical-align: top; }
 .ps-lore-panel table { width: 100%; border-collapse: collapse; }
 
+/* Pestaña «Mundo»: mapa protagonista + columna de capas (instrumentación) */
+.ps-mundo { gap: 28px !important; }
+.ps-mundo-mapa { flex: 1 1 72%; min-width: 0; }
+.ps-mundo-capas { flex: 0 0 220px; padding-top: 6px; border-top: 1px solid var(--reticula); }
+.ps-instrumento-rotulo { font-size: 10.5px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--tiza); margin: 10px 0 6px; }
+.ps-instrumento-nota { font-family: var(--mono); font-size: 10.5px; line-height: 1.5; color: var(--niebla); margin-top: 14px; }
+@media (max-width: 900px) {
+  .ps-mundo { flex-wrap: wrap !important; }
+  .ps-mundo-capas { flex: 1 1 100%; }
+}
+
 /* ── Accesibilidad ────────────────────────────────────────────────────── */
 :focus-visible { outline: 2px solid var(--iris) !important; outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) {
