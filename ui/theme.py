@@ -32,6 +32,61 @@ TONOS_ESCENARIO = {
     "eden": [GRANADA, "#FF9AA8", "#D63A52", "#FFC2CB"],
 }
 
+# ── Mapa hexagonal ───────────────────────────────────────────────────────────
+# Biomas en tonos apagados, para que personas y estructuras se lean encima.
+BIOMAS: dict[str, str] = {
+    "bosque_templado":  "#2F6B4F",
+    "pradera_humeda":   "#6E9A5B",
+    "rio_lago":         "#3E7FB8",
+    "montana_alta":     "#8E97A6",
+    "sabana_abierta":   "#C2A257",
+    "pantano_costero":  "#4A7A72",
+    "cueva":            "#454C5E",
+    "valle_fertil":     "#4FAE7C",
+    "costa_abierta":    "#5B93C4",
+    "desierto_borde":   "#D1B06B",
+    "colinas_suaves":   "#8C9B62",
+    "lago_interior":    "#2C5F96",
+}
+BIOMA_DESCONOCIDO = "#5A5478"
+MAPA_NIEBLA = "#0A0F19"        # hexes sin explorar
+MAPA_CONTORNO = ABISMO         # borde de personas y estructuras
+MAPA_PORTAL = "#C9BFFF"        # relleno del portal liminal (borde IRIS)
+MAPA_TUMBA = "#B8C0CC"
+MAPA_FAUNA = AMBAR
+MAPA_FUEGO = ALERTA
+MAPA_MUERTO = "#6B7688"
+# tipo de estructura → (símbolo Plotly, color, tamaño)
+MAPA_ESTRUCTURAS: dict[str, tuple[str, str, int]] = {
+    "totem":    ("diamond",         "#C9A2FF", 16),
+    "altar":    ("triangle-up",     AMBAR,     16),
+    "muralla":  ("square",          "#9AA5B5", 14),
+    "hoguera":  ("circle",          "#FF8A5B", 14),
+    "refugio":  ("pentagon",        LIQUEN,    13),
+    "marcador": ("cross-thin-open", NIEBLA,    12),
+    "deposito": ("hexagon2-open",   "#C98D1F", 13),
+}
+MAPA_ESTRUCTURA_DESCONOCIDA = ("circle-open", NIEBLA, 12)
+
+# ── Red social ───────────────────────────────────────────────────────────────
+RED_ENTRELAZADO = IRIS
+RED_LAZO_POSITIVO = LIQUEN
+RED_LAZO_NEGATIVO = GRANADA
+RED_MUERTO = NIEBLA
+# Humor de cada persona (relleno del nodo): bajo, medio, alto
+RED_HUMOR_BAJO, RED_HUMOR_MEDIO, RED_HUMOR_ALTO = GRANADA, AMBAR, LIQUEN
+# Borde del nodo: una tribu, un color
+RED_TRIBUS = ["#8FB3FF", "#F8D387", "#B9F0DC", "#C9A2FF", "#FF9AA8", "#7FD6E8", "#FF8A5B",
+              "#8B7BFF", "#2FA37E", "#C98D1F", "#D63A52", "#5B93C4", "#E6EAF0"]
+
+LEYENDA_FONDO = "rgba(14,20,32,.72)"   # ABISMO translúcido
+
+
+def color_humor(humor: float) -> str:
+    """Color del humor de una persona (0–1) en la red social."""
+    return RED_HUMOR_BAJO if humor < 0.35 else RED_HUMOR_MEDIO if humor < 0.65 else RED_HUMOR_ALTO
+
+
 FUENTE_UI = "'Instrument Sans', system-ui, sans-serif"
 FUENTE_TITULO = "'Instrument Serif', Georgia, serif"
 

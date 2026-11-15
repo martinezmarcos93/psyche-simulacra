@@ -18,26 +18,15 @@ import traceback
 from collections import deque
 from pathlib import Path
 
+from ui import theme as T
+
 ROOT = Path(__file__).parent.parent
 
 # ── Paleta ────────────────────────────────────────────────────────────────────
 
-_BIOME_COLORS: dict[str, str] = {
-    # Nombres reales de terrain.py / hexagon.py
-    "bosque_templado":  "#1f6b1f",
-    "pradera_humeda":   "#5a8a3c",
-    "rio_lago":         "#2471a3",
-    "montana_alta":     "#9e9e9e",
-    "sabana_abierta":   "#c8a040",
-    "pantano_costero":  "#3d6b5a",
-    "cueva":            "#3a3a4a",
-    "valle_fertil":     "#27ae60",
-    "costa_abierta":    "#3d7aad",
-    "desierto_borde":   "#d4a040",
-    "colinas_suaves":   "#7a9050",
-    "lago_interior":    "#1a5280",
-}
-_DEFAULT_BIOME = "#4a3a6a"  # púrpura oscuro para biomas no reconocidos
+# Los colores del mapa y de la red social viven en ui/theme.py.
+_BIOME_COLORS: dict[str, str] = T.BIOMAS
+_DEFAULT_BIOME = T.BIOMA_DESCONOCIDO
 _HEX_SIZE      = 8.0
 
 _ARCH_COLORS: dict[str, str] = {
@@ -403,7 +392,7 @@ def _build_hex_map(
     if fog_xs:
         traces.append(go.Scattergl(
             x=fog_xs, y=fog_ys, mode="markers",
-            marker=dict(symbol="circle", size=13, color="#0d0520", opacity=0.90,
+            marker=dict(symbol="circle", size=13, color=T.MAPA_NIEBLA, opacity=0.90,
                         line=dict(width=0)),
             hoverinfo="skip", name="Niebla",
             visible=_vis("niebla"),
@@ -443,7 +432,7 @@ def _build_hex_map(
         traces.append(go.Scattergl(
             x=lim_xs, y=lim_ys, mode="markers",
             marker=dict(symbol="diamond-open", size=lim_sizes,
-                        color="#9b59b6", line=dict(width=2.5)),
+                        color=T.IRIS, line=dict(width=2.5)),
             text=lim_t, hoverinfo="text", name="Liminal",
             visible=_vis("liminales"),
         ))
@@ -452,8 +441,8 @@ def _build_hex_map(
     if portal_xs:
         traces.append(go.Scattergl(
             x=portal_xs, y=portal_ys, mode="markers",
-            marker=dict(symbol="star", size=28, color="#c39bd3",
-                        line=dict(width=3, color="#9b59b6"), opacity=0.90),
+            marker=dict(symbol="star", size=28, color=T.MAPA_PORTAL,
+                        line=dict(width=3, color=T.IRIS), opacity=0.90),
             text=portal_t, hoverinfo="text", name="Portal Liminal",
             visible=_vis("liminales"),
         ))
@@ -467,7 +456,7 @@ def _build_hex_map(
     if gx:
         traces.append(go.Scattergl(
             x=gx, y=gy, mode="markers",
-            marker=dict(symbol="star", size=12, color="#bdc3c7"),
+            marker=dict(symbol="star", size=12, color=T.MAPA_TUMBA),
             name="Tumbas", hoverinfo="skip",
             visible=_vis("tumbas"),
         ))
@@ -482,7 +471,7 @@ def _build_hex_map(
     if fx:
         traces.append(go.Scattergl(
             x=fx, y=fy, mode="markers",
-            marker=dict(symbol="triangle-up", size=14, color="#f39c12"),
+            marker=dict(symbol="triangle-up", size=14, color=T.MAPA_FAUNA),
             text=ft, hoverinfo="text", name="Fauna",
             visible=_vis("fauna"),
         ))
@@ -492,26 +481,18 @@ def _build_hex_map(
         x, y = _hex_xy(*snap.fuego_coord)
         traces.append(go.Scattergl(
             x=[x], y=[y], mode="markers",
-            marker=dict(symbol="circle", size=22, color="#e74c3c", opacity=0.9),
+            marker=dict(symbol="circle", size=22, color=T.MAPA_FUEGO, opacity=0.9),
             name="Fuego", hoverinfo="skip",
             visible=_vis("fuego"),
         ))
 
     # ── B1: Estructuras culturales ───────────────────────────────────────────
-    _STRUCT_SYMBOLS = {
-        "totem":   ("diamond",         "#E040FB", 16),   # violeta
-        "altar":   ("triangle-up",     "#F4D03F", 16),   # dorado
-        "muralla": ("square",          "#95a5a6", 14),   # gris
-        "hoguera": ("circle",          "#e74c3c", 14),   # rojo
-        "refugio": ("pentagon",        "#2ecc71", 13),   # verde
-        "marcador":("cross-thin-open", "#aaa",    12),   # gris claro
-        "deposito":("hexagon2-open",   "#f39c12", 13),   # naranja
-    }
+    _STRUCT_SYMBOLS = T.MAPA_ESTRUCTURAS
     if structures_data and _vis("estructuras"):
         by_tipo: dict[str, dict] = {}
         for s in structures_data:
             tipo   = s["tipo"]
-            sym, col, sz = _STRUCT_SYMBOLS.get(tipo, ("circle-open", "#888", 12))
+            sym, col, sz = _STRUCT_SYMBOLS.get(tipo, T.MAPA_ESTRUCTURA_DESCONOCIDA)
             estado = s.get("estado", "activo")
             # Ruinas más transparentes
             opacity = 1.0 if estado == "activo" else (0.55 if estado == "abandonado" else 0.30)
@@ -532,7 +513,7 @@ def _build_hex_map(
                 x=data["xs"], y=data["ys"], mode="markers",
                 marker=dict(symbol=data["sym"], size=data["sz"],
                             color=data["col"], opacity=data["opacities"],
-                            line=dict(width=1.5, color="#000")),
+                            line=dict(width=1.5, color=T.MAPA_CONTORNO)),
                 text=data["texts"], hoverinfo="text",
                 name=f"[E] {tipo}", legendgroup="estructuras",
                 visible=True,
@@ -566,9 +547,9 @@ def _build_hex_map(
             traces.append(go.Scattergl(
                 x=data["xs"], y=data["ys"], mode="markers+text",
                 marker=dict(symbol="circle", size=19, color=color,
-                            line=dict(width=2.5, color="#000000")),
+                            line=dict(width=2.5, color=T.MAPA_CONTORNO)),
                 text=data["labels"], textposition="top center",
-                textfont=dict(size=8, color="#ffffff"),
+                textfont=dict(size=8, color=T.TIZA),
                 hovertext=data["hovers"], hoverinfo="text",
                 name=f"↑ {arch}", legendgroup="agentes",
                 visible=True,
@@ -577,7 +558,7 @@ def _build_hex_map(
         if dead_ax:
             traces.append(go.Scattergl(
                 x=dead_ax, y=dead_ay, mode="markers",
-                marker=dict(symbol="x-thin-open", size=11, color="#666677",
+                marker=dict(symbol="x-thin-open", size=11, color=T.MAPA_MUERTO,
                             line=dict(width=1.5)),
                 text=dead_at, hoverinfo="text",
                 name="Muertos", legendgroup="agentes",
@@ -590,7 +571,7 @@ def _build_hex_map(
     fig.update_layout(
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         showlegend=True,
-        legend=dict(font=dict(color="#dbe4f2", size=10), bgcolor="rgba(0,0,0,0.5)",
+        legend=dict(font=dict(color=T.TIZA, size=10), bgcolor=T.LEYENDA_FONDO,
                     itemsizing="constant"),
         margin=dict(l=0, r=0, t=24, b=0),
         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False,
@@ -598,7 +579,7 @@ def _build_hex_map(
         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
         title=dict(
             text=f"{n_exp}/{n_tot} hexes explorados ({100*n_exp//max(n_tot,1)}%)",
-            font=dict(color="#c6a2f2", size=11),
+            font=dict(color=T.NIEBLA, size=11),
         ),
         dragmode="pan",
         uirevision="map",
@@ -1118,14 +1099,14 @@ def _build_social_graph(cp: dict) -> "go.Figure | None":
     traces = []
     if ex_ent:
         traces.append(go.Scatter(x=ex_ent, y=ey_ent, mode="lines",
-            line=dict(color="#E040FB", width=1.5), hoverinfo="skip", name="⚛ Entrelazado"))
+            line=dict(color=T.RED_ENTRELAZADO, width=1.5), hoverinfo="skip", name="⚛ Entrelazado"))
     if ex_pos:
         traces.append(go.Scatter(x=ex_pos, y=ey_pos, mode="lines",
-            line=dict(color="#00D2B4", width=0.5, dash="solid"),
+            line=dict(color=T.RED_LAZO_POSITIVO, width=0.8, dash="solid"),
             hoverinfo="skip", name="Lazo ＋"))
     if ex_neg:
         traces.append(go.Scatter(x=ex_neg, y=ey_neg, mode="lines",
-            line=dict(color="#FF4B4B", width=0.5),
+            line=dict(color=T.RED_LAZO_NEGATIVO, width=0.8),
             hoverinfo="skip", name="Lazo −"))
 
     # ── Nodos muertos como X pequeña ─────────────────────────────────────────
@@ -1138,7 +1119,7 @@ def _build_social_graph(cp: dict) -> "go.Figure | None":
     if dx_list:
         traces.append(go.Scatter(
             x=dx_list, y=dy_list, mode="markers",
-            marker=dict(symbol="x-thin-open", size=8, color="#91a2bb",
+            marker=dict(symbol="x-thin-open", size=8, color=T.RED_MUERTO,
                         line=dict(width=1.2)),
             text=dead_t, hoverinfo="text", name="Muertos",
         ))
@@ -1151,9 +1132,7 @@ def _build_social_graph(cp: dict) -> "go.Figure | None":
     tribe_node_t: dict[str, list] = {}
     tribe_labels: dict[str, list] = {}
 
-    _TRIBE_BORDER = ["#4a9eff","#ff9f43","#2ecc71","#e040fb","#ff4b4b",
-                     "#f4d03f","#00d2b4","#e74c3c","#8e44ad","#16a085",
-                     "#d35400","#1abc9c","#2980b9"]
+    _TRIBE_BORDER = T.RED_TRIBUS
 
     for aid, ag in alive.items():
         tid = a2t.get(aid, "_sin_tribu")
@@ -1162,7 +1141,7 @@ def _build_social_graph(cp: dict) -> "go.Figure | None":
         tribe_node_x.setdefault(tid, []).append(pos[0])
         tribe_node_y.setdefault(tid, []).append(pos[1])
         tribe_node_c.setdefault(tid, []).append(
-            "#FF4B4B" if h < 0.35 else "#F4D03F" if h < 0.65 else "#00D2B4"
+            T.color_humor(h)
         )
         tribe_node_t.setdefault(tid, []).append(
             f"<b>{ag['nombre']}</b><br>Tribu: {tid[:12]}<br>"
@@ -1179,7 +1158,7 @@ def _build_social_graph(cp: dict) -> "go.Figure | None":
             marker=dict(size=12, color=tribe_node_c[tid],
                         line=dict(color=border, width=2)),
             text=tribe_labels[tid],
-            textfont=dict(size=8, color="#dbe4f2"),
+            textfont=dict(size=9, color=T.TIZA),
             textposition="top center",
             hovertext=tribe_node_t[tid], hoverinfo="text",
             name=tid[:14],
@@ -1191,10 +1170,10 @@ def _build_social_graph(cp: dict) -> "go.Figure | None":
     )
     fig = go.Figure(data=traces)
     fig.update_layout(
-        title=dict(text=stats_text, font=dict(color="#aab8cc", size=11)),
+        title=dict(text=stats_text, font=dict(color=T.NIEBLA, size=11)),
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
         showlegend=True,
-        legend=dict(font=dict(color="#dbe4f2", size=9), bgcolor="rgba(0,0,0,0.4)",
+        legend=dict(font=dict(color=T.TIZA, size=10), bgcolor=T.LEYENDA_FONDO,
                     x=0.01, y=0.99),
         margin=dict(l=0, r=0, t=30, b=0),
         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),

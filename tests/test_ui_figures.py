@@ -295,3 +295,34 @@ class TestBuildEmergenceFigure:
         assert fig is not None
 
 
+
+
+# ── Paleta del mapa y de la red social (ui/theme.py) ─────────────────────────
+
+class TestPaletaDelTema:
+    def test_colores_del_mapa_y_la_red_son_hex_validos(self):
+        import re
+        from ui import theme as T
+
+        colores = [*T.BIOMAS.values(), T.BIOMA_DESCONOCIDO, T.MAPA_NIEBLA, T.MAPA_PORTAL,
+                   T.MAPA_TUMBA, T.MAPA_FAUNA, T.MAPA_FUEGO, T.MAPA_MUERTO, *T.RED_TRIBUS,
+                   *(c for _, c, _ in T.MAPA_ESTRUCTURAS.values()),
+                   T.RED_ENTRELAZADO, T.RED_LAZO_POSITIVO, T.RED_LAZO_NEGATIVO]
+        assert all(re.fullmatch(r"#[0-9A-Fa-f]{6}", c) for c in colores)
+        assert len(set(T.BIOMAS.values())) == len(T.BIOMAS)      # ningún bioma repite color
+        assert len(set(T.RED_TRIBUS)) == len(T.RED_TRIBUS)
+
+    def test_humor_usa_tres_tramos(self):
+        from ui import theme as T
+
+        assert [T.color_humor(h) for h in (0.0, 0.5, 0.9)] == [
+            T.RED_HUMOR_BAJO, T.RED_HUMOR_MEDIO, T.RED_HUMOR_ALTO]
+
+    def test_el_mapa_usa_los_biomas_del_tema(self, minimal_snap, minimal_terrain):
+        from ui import theme as T
+
+        fig = _build_hex_map(minimal_snap, minimal_terrain,
+                             explored_coords=frozenset(minimal_terrain))
+        usados = {c for t in fig.data if not isinstance(t.marker.color, (str, type(None)))
+                  for c in t.marker.color}
+        assert usados == {T.BIOMAS[b] for b in minimal_terrain.values()}
