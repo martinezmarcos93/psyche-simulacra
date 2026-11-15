@@ -154,6 +154,65 @@ def test_leer_serie_tolera_ausente_y_filas_rotas(datos):
     assert C.leer_serie(d) == {"dia": [1.0, 3.0], "n_alive": [10.0, 8.0], "n_tribes": [5.0, 4.0]}
 
 
+def _escribir_serie_con_flujos(d, filas):
+    """filas: (dia, nacimientos, vejez, carencia, violentas, catastrofe, otras, cambios)."""
+    p = C.serie_csv(d)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    cab = "dia,n_alive,n_tribes," + ",".join(C.COLUMNAS_FLUJO)
+    p.write_text(cab + "\n" + "".join(
+        f"{f[0]},10,2," + ",".join(str(v) for v in f[1:]) + "\n" for f in filas), encoding="utf-8")
+
+
+def test_leer_flujos_suma_por_tramo(datos):
+    d = C.crear_corrida(C.CorridaConfig())
+    _escribir_serie_con_flujos(d, [
+        (1, 1, 0, 0, 0, 0, 0, 0), (365, 0, 1, 1, 0, 0, 0, 2),   # año 1
+        (366, 2, 0, 0, 1, 1, 1, 0),                              # año 2
+    ])
+    f = C.leer_flujos(d)
+    assert f["tramo"] == [1.0, 2.0]
+    assert f["nacimientos"] == [1.0, 2.0]
+    assert f["muertes"] == [2.0, 3.0]
+    assert f["cambios_de_tribu"] == [2.0, 0.0]
+    assert f["muertes_vejez"] == [1.0, 0.0]
+    # por mes: los días 365 y 366 caen en el mismo tramo de 30 días
+    assert C.leer_flujos(d, 30)["tramo"] == [1.0, 13.0]
+
+
+def test_leer_flujos_de_corrida_vieja_o_vacia(datos):
+    d = C.crear_corrida(C.CorridaConfig())
+    assert C.leer_flujos(d)["tramo"] == []
+    p = C.serie_csv(d)
+    p.parent.mkdir(parents=True)
+    p.write_text("dia,n_alive,n_tribes\n1,10,5\n", encoding="utf-8")   # sin columnas de flujo
+    f = C.leer_flujos(d)
+    assert f["tramo"] == [] and f["muertes"] == []
+
+
+def test_figura_de_flujos_del_panel(datos):
+    from ui import hub
+
+    con = C.crear_corrida(C.CorridaConfig(nombre="con flujos"))
+    _escribir_serie_con_flujos(con, [(d, 1, 0, 1, 0, 0, 0, 1) for d in range(1, 1100)])
+    vieja = C.crear_corrida(C.CorridaConfig(nombre="vieja", semilla=7))
+    p = C.serie_csv(vieja)
+    p.parent.mkdir(parents=True)
+    p.write_text("dia,n_alive,n_tribes\n1,10,5\n", encoding="utf-8")
+
+    vacia = hub._figura_flujos([])
+    assert vacia["data"] == [] and vacia["layout"]["annotations"]
+
+    fig = hub._figura_flujos([con.name, vieja.name, "no-existe"])
+    assert len(fig["data"]) == 4                      # nacen, mueren, cambios y causas
+    barras = next(t for t in fig["data"] if t["type"] == "bar")
+    assert sum(barras["y"]) == 1099                   # una muerte por carencia por día
+    assert "año" in fig["layout"]["yaxis"]["title"]["text"]   # más de dos años: por año
+    assert any("vieja" in n["text"] for n in fig["layout"]["annotations"])
+
+    solo_vieja = hub._figura_flujos([vieja.name])
+    assert solo_vieja["data"] == [] and "anteriores" in solo_vieja["layout"]["annotations"][0]["text"]
+
+
 def test_generar_poblacion(datos):
     p = C.generar_poblacion(6, 3)
     assert p.parent == datos / "poblaciones"

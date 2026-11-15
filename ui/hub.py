@@ -683,24 +683,30 @@ def _seccion_comparar(ui, tabla) -> None:
         ui.label("Marcá corridas en la tabla de arriba para ver su población y sus tribus "
                  "a lo largo del tiempo.").classes("text-xs text-gray-400")
         graf = ui.plotly(_figura([])).classes("w-full ps-chart-frame").style("height:520px")
+        ui.label("Flujos").classes("ps-section-heading")
+        ui.label("Cuánta gente nace y muere, de qué muere y cuántos cambian de tribu. "
+                 "Las corridas anteriores a esta versión no guardaron estos datos.").classes(
+                     "text-xs text-gray-400")
+        flujos = ui.plotly(_figura_flujos([])).classes("w-full ps-chart-frame").style("height:760px")
 
         def _actualizar() -> None:
             ids = [r["id"] for r in (tabla.selected or [])]
             graf.update_figure(_figura(ids))
+            flujos.update_figure(_figura_flujos(ids))
 
         tabla.on("selection", lambda _: _actualizar())
         ui.timer(10.0, _actualizar)
 
 
-def _figura(ids: list[str]) -> dict:
-    """Población y tribus de las corridas marcadas.
+def _corridas_con_color(ids: list[str]) -> list[tuple[str, Path, str, str]]:
+    """(id, carpeta, etiqueta, color) de las corridas marcadas que existen.
 
-    Cada línea lleva el color de su escenario; las réplicas de un mismo
+    Cada corrida lleva el color de su escenario; las réplicas de un mismo
     escenario se distinguen por tono.
     """
     from ui import theme as T
 
-    trazas = []
+    out = []
     usados: dict[str, int] = {}
     for rid in ids:
         d = C.directorio_corridas() / rid
@@ -710,9 +716,121 @@ def _figura(ids: list[str]) -> dict:
         tonos = T.TONOS_ESCENARIO.get(cfg.escenario, [T.IRIS])
         color = tonos[usados.get(cfg.escenario, 0) % len(tonos)]
         usados[cfg.escenario] = usados.get(cfg.escenario, 0) + 1
+        out.append((rid, d, cfg.nombre or rid, color))
+    return out
+
+
+def _eje_plotly() -> dict:
+    from ui import theme as T
+
+    return {
+        "gridcolor": "rgba(139,151,170,.12)",
+        "zerolinecolor": "rgba(139,151,170,.25)",
+        "linecolor": T.RETICULA,
+        "tickfont": {"color": T.NIEBLA, "size": 11},
+    }
+
+
+_CAUSAS_MUERTE = (
+    ("muertes_vejez", "Vejez"), ("muertes_carencia", "Hambre, sed<br>u orfandad"),
+    ("muertes_violentas", "Depredadores"), ("muertes_catastrofe", "Catástrofes"),
+    ("muertes_otras", "Otras"),
+)
+# Hasta esta duración la serie de flujos se agrupa por mes; después, por año.
+_DIAS_FLUJO_MENSUAL = 730
+
+
+def _figura_flujos(ids: list[str]) -> dict:
+    """Nacimientos y muertes, cambios de tribu y causas de muerte de las corridas marcadas."""
+    from ui import theme as T
+
+    corridas = _corridas_con_color(ids)
+    duracion = max((max(C.leer_serie(d, ("dia",))["dia"], default=0) for _, d, _, _ in corridas),
+                   default=0)
+    mensual = duracion <= _DIAS_FLUJO_MENSUAL
+    dias_tramo, unidad, eje_x = (30, "mes", "Meses simulados") if mensual else (365, "año", "Años simulados")
+
+    trazas = []
+    sin_datos: list[str] = []
+    for rid, d, etiqueta, color in corridas:
+        f = C.leer_flujos(d, dias_tramo)
+        if not f["tramo"]:
+            sin_datos.append(etiqueta)
+            continue
+        comun = {"type": "scatter", "mode": "lines", "x": f["tramo"], "legendgroup": rid}
+        trazas.append({**comun, "y": f["nacimientos"], "name": etiqueta,
+                       "line": {"color": color, "width": 2.2},
+                       "hovertemplate": "%{y:.0f} nacimientos<extra>" + etiqueta + "</extra>",
+                       "xaxis": "x", "yaxis": "y"})
+        trazas.append({**comun, "y": f["muertes"], "name": etiqueta, "showlegend": False,
+                       "line": {"color": color, "width": 1.6, "dash": "dot"},
+                       "hovertemplate": "%{y:.0f} muertes<extra>" + etiqueta + "</extra>",
+                       "xaxis": "x", "yaxis": "y"})
+        trazas.append({**comun, "y": f["cambios_de_tribu"], "name": etiqueta, "showlegend": False,
+                       "line": {"color": color, "width": 2.2},
+                       "hovertemplate": "%{y:.0f} cambios de tribu<extra>" + etiqueta + "</extra>",
+                       "xaxis": "x2", "yaxis": "y2"})
+        trazas.append({"type": "bar", "x": [t for _, t in _CAUSAS_MUERTE],
+                       "y": [sum(f[c]) for c, _ in _CAUSAS_MUERTE],
+                       "name": etiqueta, "legendgroup": rid, "showlegend": False,
+                       "marker": {"color": color},
+                       "hovertemplate": "%{y:.0f} muertes<extra>" + etiqueta + "</extra>",
+                       "xaxis": "x3", "yaxis": "y3"})
+
+    eje = _eje_plotly()
+    titulo = lambda texto: {"text": texto, "font": {"color": T.NIEBLA, "size": 12}}  # noqa: E731
+
+    def _eje_conteo(nombre_eje: str) -> dict:
+        """Eje de cantidades: arranca en 0 y, con valores chicos, no muestra fracciones."""
+        tope = max((v for t in trazas if t["yaxis"] == nombre_eje for v in t["y"]), default=0)
+        return {**eje, "range": [0, max(4.2, tope * 1.08)]}
+
+    tramos = max((v for t in trazas if t["xaxis"] == "x" for v in t["x"]), default=0)
+    eje_tiempo = {**eje, **({"dtick": 1} if tramos <= 24 else {})}
+    if not corridas:
+        aviso = "Marcá corridas en la tabla para ver sus nacimientos, muertes y cambios de tribu."
+    elif not trazas:
+        aviso = "Las corridas marcadas son anteriores a los contadores de flujo: no tienen estos datos."
+    else:
+        aviso = ""
+    notas = [{"text": aviso, "showarrow": False, "xref": "paper", "yref": "paper",
+              "x": 0.5, "y": 0.5, "font": {"color": T.NIEBLA, "size": 13}}] if aviso else []
+    if trazas and sin_datos:
+        notas.append({"text": "Sin datos de flujo: " + ", ".join(sin_datos), "showarrow": False,
+                      "xref": "paper", "yref": "paper", "x": 0, "y": 1.045, "xanchor": "left",
+                      "font": {"color": T.NIEBLA, "size": 11}})
+    return {
+        "data": trazas,
+        "layout": {
+            **T.PLOTLY_LAYOUT,
+            "hoverlabel": {"bgcolor": T.PIZARRA_ALTA, "bordercolor": T.RETICULA,
+                           "font": {"color": T.TIZA, "family": T.FUENTE_UI}},
+            "margin": {"l": 58, "r": 16, "t": 36, "b": 48},
+            "barmode": "group", "bargap": 0.3,
+            "xaxis": {**eje_tiempo, "domain": [0, 1], "anchor": "y", "matches": "x2"},
+            "yaxis": {**_eje_conteo("y"), "domain": [0.72, 1],
+                      "title": titulo(f"Nacen (línea) y mueren<br>(punteado) por {unidad}")},
+            "xaxis2": {**eje_tiempo, "domain": [0, 1], "anchor": "y2", "title": titulo(eje_x)},
+            "yaxis2": {**_eje_conteo("y2"), "domain": [0.40, 0.66],
+                       "title": titulo(f"Cambios de tribu<br>por {unidad}")},
+            "xaxis3": {**eje, "domain": [0, 1], "anchor": "y3", "type": "category",
+                       "tickfont": {"color": T.TIZA, "size": 12}},
+            "yaxis3": {**_eje_conteo("y3"), "domain": [0, 0.26],
+                       "title": titulo("Muertes en toda<br>la corrida, por causa")},
+            "legend": {"orientation": "h", "y": -0.08, "font": {"color": T.TIZA, "size": 12}},
+            "annotations": notas,
+        },
+    }
+
+
+def _figura(ids: list[str]) -> dict:
+    """Población y tribus de las corridas marcadas."""
+    from ui import theme as T
+
+    trazas = []
+    for rid, d, etiqueta, color in _corridas_con_color(ids):
         serie = C.leer_serie(d)
         x = [v / 365 for v in serie["dia"]]
-        etiqueta = cfg.nombre or rid
         trazas.append({"type": "scatter", "mode": "lines", "x": x, "y": serie["n_alive"],
                        "name": etiqueta, "legendgroup": rid,
                        "line": {"color": color, "width": 2.2},
@@ -721,12 +839,7 @@ def _figura(ids: list[str]) -> dict:
                        "name": etiqueta, "legendgroup": rid, "showlegend": False,
                        "line": {"color": color, "width": 1.6, "dash": "dot"},
                        "xaxis": "x2", "yaxis": "y2"})
-    eje = {
-        "gridcolor": "rgba(139,151,170,.12)",
-        "zerolinecolor": "rgba(139,151,170,.25)",
-        "linecolor": T.RETICULA,
-        "tickfont": {"color": T.NIEBLA, "size": 11},
-    }
+    eje = _eje_plotly()
     titulo = lambda texto: {"text": texto, "font": {"color": T.NIEBLA, "size": 12}}  # noqa: E731
     return {
         "data": trazas,

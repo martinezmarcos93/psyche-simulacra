@@ -427,6 +427,35 @@ def leer_serie(d: Path, columnas: tuple[str, ...] = ("dia", "n_alive", "n_tribes
     return out
 
 
+COLUMNAS_FLUJO: tuple[str, ...] = (
+    "nacimientos", "muertes_vejez", "muertes_carencia", "muertes_violentas",
+    "muertes_catastrofe", "muertes_otras", "cambios_de_tribu",
+)
+
+
+def leer_flujos(d: Path, dias_por_tramo: int = 365) -> dict[str, list[float]]:
+    """Flujos de la corrida sumados por tramo (por defecto, por año simulado).
+
+    Devuelve `tramo` (1, 2, …), `muertes` (todas las causas) y una lista por cada
+    columna de `COLUMNAS_FLUJO`. Las corridas anteriores a los contadores de flujo
+    no tienen esas columnas: devuelven listas vacías.
+    """
+    serie = leer_serie(d, ("dia", *COLUMNAS_FLUJO))
+    sumas: dict[int, dict[str, float]] = {}
+    for i, dia in enumerate(serie["dia"]):
+        tramo = max(0, int(dia) - 1) // max(1, dias_por_tramo) + 1
+        acum = sumas.setdefault(tramo, dict.fromkeys(COLUMNAS_FLUJO, 0.0))
+        for c in COLUMNAS_FLUJO:
+            acum[c] += serie[c][i]
+    tramos = sorted(sumas)
+    out: dict[str, list[float]] = {"tramo": [float(t) for t in tramos]}
+    for c in COLUMNAS_FLUJO:
+        out[c] = [sumas[t][c] for t in tramos]
+    out["muertes"] = [sum(sumas[t][c] for c in COLUMNAS_FLUJO if c.startswith("muertes_"))
+                      for t in tramos]
+    return out
+
+
 def comando_corrida(d: Path, ver: bool = False) -> list[str]:
     """Comando para lanzar el proceso de una corrida o su visor (sirve empaquetado)."""
     modo = "--ver" if ver else "--corrida"
