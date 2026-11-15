@@ -1983,6 +1983,7 @@ def build_monitor_page(app_state, hub_url: str | None = None,
             ui.link("← Panel", hub_url).classes("text-purple-200 text-sm no-underline")
         ui.element("div").classes("ps-brand-seal")
         ui.label("Psyche Simulacra").classes("ps-brand-mark")
+        ui.label("Observatorio · corrida").classes("ps-ruta")
         if titulo:
             ui.label(titulo).classes("text-sm text-purple-200 italic")
         refs_hdr: dict = {}
@@ -1991,6 +1992,7 @@ def build_monitor_page(app_state, hub_url: str | None = None,
             refs_hdr["vivos"]  = ui.label("Agentes —").classes("text-green-300 text-sm")
             refs_hdr["tribus"] = ui.label("Tribus —").classes("text-blue-300 text-sm")
             refs_hdr["estado"] = ui.badge("—", color="grey").classes("text-xs")
+        ui.html(T.MODO_OBSERVACION).classes("ps-modo-observacion")
 
         # Control de velocidad de simulación
         _SPEED_LABELS = ["MAX", "×20", "×5", "×1", "Paso"]
