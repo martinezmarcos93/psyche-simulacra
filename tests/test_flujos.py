@@ -155,3 +155,36 @@ def test_simulacion_corta_escribe_flujos(tmp_path):
     for fila in serie:
         dia = fila["dia"]
         assert sum(int(t["poblacion"]) for t in tribus if t["dia"] == dia) <= int(fila["n_alive"])
+
+
+def test_muertes_de_la_prehistoria_no_van_a_la_bd(tmp_path):
+    """Las muertes ocurridas en la prehistoria silenciosa no se registran el día 1."""
+    import sqlite3
+
+    from core.simulation import SimulationRunner
+    from tests.test_simulation import SEEDS_FILE
+
+    db = tmp_path / "sim.db"
+    runner = SimulationRunner.new_session(
+        seed_file=SEEDS_FILE, db_path=str(db), checkpoint_dir=str(tmp_path / "cp"),
+        vault_path=str(tmp_path / "vault"),
+    )
+    runner.metrics_exporter = MetricsExporter(str(tmp_path / "metrics"))
+
+    # Una muerte dentro de la prehistoria (la persistencia está suprimida).
+    victima = next(a for a in runner.agents.agents.values() if a.is_alive)
+    victima.is_alive = False
+    runner.agents.death_log.append({
+        "tick": 0, "dia": 0, "agent_id": victima.id,
+        "nombre": victima.nombre, "causa": "vejez",
+    })
+    runner.run_prehistory(n_days=1)
+    previas = len(runner.agents.death_log)
+
+    runner.run(n_days=1)
+
+    nuevas = len(runner.agents.death_log) - previas
+    with sqlite3.connect(db) as conn:
+        en_bd = conn.execute("SELECT COUNT(*) FROM deaths_log").fetchone()[0]
+    assert en_bd == nuevas
+    assert runner.session._muertes == nuevas
