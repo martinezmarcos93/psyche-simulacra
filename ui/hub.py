@@ -49,8 +49,9 @@ MECANISMOS: list[tuple[str, str, str]] = [
 
 AYUDA_NATALIDAD = (
     "Con los valores por defecto casi no hay nacimientos y toda sociedad termina "
-    "extinguiéndose por desgaste. Subir la probabilidad diaria o bajar el vínculo "
-    "mínimo permite que la población se renueve."
+    "extinguiéndose por desgaste: quien tiene abstinencia de alguna sustancia vive "
+    "cansado y no concibe. Para que la población se renueve: cansancio máximo 0.85 "
+    "(ajustes finos) y vínculo mínimo 0.30. Subir la probabilidad diaria ayuda poco."
 )
 
 _FASE_TEXTO = {

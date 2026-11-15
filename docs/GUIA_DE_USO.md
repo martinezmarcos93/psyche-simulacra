@@ -60,9 +60,20 @@ medida que se libera lugar (se ajusta en *Avanzado → Corridas simultáneas*).
 - **Mecanismos psicológicos:** capas experimentales de la psicología de las
   personas. Vienen apagadas.
 - **Natalidad:** con los valores por defecto casi no nacen chicos y toda
-  sociedad termina extinguiéndose por desgaste. Para estudiar sociedades que
-  se renuevan, subir la probabilidad diaria de concebir (por ejemplo a 0,02)
-  o bajar el vínculo mínimo de pareja.
+  sociedad termina extinguiéndose por desgaste. La causa principal es el
+  cansancio: quien tiene abstinencia de alguna sustancia vive cansado, y con
+  el umbral por defecto (0,5) casi nadie puede concebir. Para estudiar
+  sociedades que se renuevan:
+  - *Cansancio máximo para concebir* (en ajustes finos): **0,85**.
+  - *Vínculo mínimo de la pareja*: **0,30**.
+  - Subir la probabilidad diaria de concebir ayuda poco.
+  - Si además se quieren poblaciones estables, bajar *Letalidad de las
+    catástrofes* (en «Mundo, cultura y mito»): las sequías y plagas son la
+    mayor causa de muerte.
+
+  Con 100 personas, los dos primeros cambios llevan de unos 4 a unos 10
+  nacimientos por año (medido con `scripts/calibrar_natalidad.py`, una
+  semilla: tomarlo como orientación).
 - **Orden y Serpiente:** cuánto pesan la vocación impuesta y la tentación en
   cada decisión.
 - **Mundo, cultura y mito:** letalidad de las catástrofes y facilidad con que
